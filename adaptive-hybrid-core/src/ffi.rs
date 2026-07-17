@@ -81,11 +81,7 @@ impl HybridSession {
     /// and, if a listener is registered, echoes a placeholder string back
     /// through the callback so the full Java -> Rust -> Java path can be
     /// exercised end to end before real inference exists.
-    pub fn push_audio_chunk(
-        &self,
-        direction: Direction,
-        pcm: Vec<f32>,
-    ) -> Result<(), HybridError> {
+    pub fn push_audio_chunk(&self, direction: Direction, pcm: Vec<f32>) -> Result<(), HybridError> {
         {
             let mut state = self.state.lock();
             if !state.running {

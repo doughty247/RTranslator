@@ -40,7 +40,13 @@ impl WhisperModel {
     /// `model_dir` is the directory the Java side already stages these files
     /// into (`Context.getFilesDir()` on-device) — Adaptive Hybrid Mode reuses
     /// that location rather than re-downloading or re-staging.
-    pub fn load(model_dir: &Path) -> Result<Self, HybridError> {
+    ///
+    /// `ort_dylib_path` is forwarded to `runtime_guard::ensure_available` —
+    /// see that module's docs for why this check must run before any `ort`
+    /// call, not after.
+    pub fn load(model_dir: &Path, ort_dylib_path: Option<&str>) -> Result<Self, HybridError> {
+        crate::runtime_guard::ensure_available(ort_dylib_path)?;
+
         let session = |name: &str| -> Result<ort::session::Session, HybridError> {
             let mut builder = ort::session::Session::builder()
                 .map_err(|e| HybridError::ModelLoad(e.to_string()))?;

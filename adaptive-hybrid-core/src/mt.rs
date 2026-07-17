@@ -27,7 +27,11 @@ pub struct NllbModel {
 }
 
 impl NllbModel {
-    pub fn load(model_dir: &Path) -> Result<Self, HybridError> {
+    /// See `WhisperModel::load` and `runtime_guard` for why `ort_dylib_path`
+    /// must be checked before any `ort` call.
+    pub fn load(model_dir: &Path, ort_dylib_path: Option<&str>) -> Result<Self, HybridError> {
+        crate::runtime_guard::ensure_available(ort_dylib_path)?;
+
         let session = |name: &str| -> Result<ort::session::Session, HybridError> {
             let mut builder = ort::session::Session::builder()
                 .map_err(|e| HybridError::ModelLoad(e.to_string()))?;

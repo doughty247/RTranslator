@@ -41,8 +41,18 @@ deviation here since the project plan named UDL explicitly.
 ## Building
 
 ```sh
-cargo build          # host build; used for the desktop/CLI test harness described in CLAUDE.md Phase 2
-cargo test           # unit tests + integration tests (see tests/, and caveats below)
+cargo build                        # host build; the desktop/CLI test harness described in CLAUDE.md Phase 2
+cargo test                         # unit tests + integration tests (see tests/, and caveats below)
+bash tests/run_ffi_roundtrip.sh    # builds the cdylib, generates Python bindings, runs the FFI round trip
+```
+
+Regenerate the Kotlin bindings committed under `bindings/kotlin/` (for Android integration
+review — not yet wired into the app shell) with:
+
+```sh
+cargo build --lib
+cargo run --bin uniffi-bindgen -- generate --library target/debug/libadaptive_hybrid_core.so \
+    --language kotlin --out-dir bindings/kotlin
 ```
 
 Cross-compiling for Android (`aarch64-linux-android`, matching the app's `arm64-v8a`
@@ -58,6 +68,12 @@ installed). At **run** time, `ort::init_from(path)` (or the `ORT_DYLIB_PATH` env
 point at a `libonnxruntime.so` — on Android, the same shared library RTranslator's existing
 Java/JNI path already bundles is the natural candidate to reuse, rather than adding a
 second copy of ONNX Runtime to the APK; confirm that's viable before Phase 4.
+
+**Known footgun (see `../docs/model-artifact-contract.md` §5):** if that library can't be
+resolved, `ort` 2.0.0-rc.12's `load-dynamic` backend hangs instead of erroring — confirmed
+via `strace`. `asr.rs`/`mt.rs` guard against this via `runtime_guard::ensure_available()`,
+which must run before any `ort` call reaches `Session::builder()`. Don't remove that guard
+without re-verifying the hang is fixed in whatever `ort` version is in use at the time.
 
 ### What's untested here vs. what needs the developer's machine / device
 

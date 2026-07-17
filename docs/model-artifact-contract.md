@@ -140,7 +140,24 @@ we have random crashes"*, `Translator.java:815`. Do not port the beam-search pat
 - Whisper does not use this tokenizer at all — its detokenization is baked into
   `Whisper_detokenizer.onnx` as a string-output graph (§2).
 
-## 5. Open questions for Phase 4 (flag, do not guess)
+## 5. Confirmed footgun: `ort`'s `load-dynamic` hangs instead of erroring
+
+Discovered while building the Phase 2 crate skeleton, not something to rediscover the hard
+way in Phase 4: `adaptive-hybrid-core` uses `ort`'s `load-dynamic` feature (loads
+`libonnxruntime.so` at runtime via `dlopen` rather than linking against it at build time —
+necessary since this sandbox has no ONNX Runtime installed, and the natural fit for
+reusing the app's already-bundled native library on Android). With `ort` 2.0.0-rc.12,
+calling `ort::session::Session::builder()` before that shared library can be resolved does
+**not** return an `Err` — it hangs the calling thread forever on a futex wait, confirmed via
+`strace` even when `ORT_DYLIB_PATH` is explicitly set to a path that plainly doesn't exist.
+`asr.rs`/`mt.rs`'s `load()` functions now call `runtime_guard::ensure_available()` first,
+which checks the target path exists **before** touching `ort` at all, specifically to avoid
+ever reaching that hang. Re-verify this is still necessary against whatever `ort` version
+Phase 4 ships with (it's a release candidate; may be fixed upstream by then) — but don't
+remove the guard without re-testing, a silent hang is a much worse failure mode on-device
+than a clean error.
+
+## 6. Open questions for Phase 4 (flag, do not guess)
 
 - Exact ONNX Runtime execution provider RTranslator's Java side selects on-device (CPU-only
   vs NNAPI — `app/src/main/cpp/src/NNAPITest.cpp` exists in the vendored native tree and is

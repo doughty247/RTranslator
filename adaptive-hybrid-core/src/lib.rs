@@ -12,6 +12,7 @@ pub mod error;
 pub mod ffi;
 pub mod mt;
 pub mod pipeline;
+pub mod runtime_guard;
 pub mod vad;
 
 uniffi::setup_scaffolding!();
