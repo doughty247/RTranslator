@@ -90,6 +90,15 @@ impl HybridSession {
             state.chunks_received += 1;
         }
 
+        if self.config.mode(direction) == DirectionMode::Off {
+            // Counted above (so callers can still see chunks arriving) but
+            // never reaches the listener — an Off direction produces no
+            // output by definition. Real ASR/MT will short-circuit earlier
+            // than this once Phase 4 lands; this stub mirrors that contract
+            // now so callers can rely on it before the real pipeline exists.
+            return Ok(());
+        }
+
         if let Some(listener) = self.listener.lock().as_ref() {
             let target = self.config.target_language(direction);
             listener.on_translated_text(

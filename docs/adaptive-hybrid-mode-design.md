@@ -4,9 +4,10 @@
 "decision needed" until the developer has picked an option.** Per `CLAUDE.md`, this is
 the developer's own design contribution — this doc lays out options and tradeoffs, it
 does not unilaterally pick an architecture. `adaptive-hybrid-core/src/config.rs` and
-`ffi.rs` already implement §1 and part of §3 below as working Phase 2 code, since those
-two were low-risk enough to prototype directly; §2 (state machine) and §4 (echo-safety
-signal) are genuinely open and this doc proposes rather than implements them.
+`ffi.rs` already implement §1, §1a, and part of §3 below as working Phase 2 code, since
+those were low-risk enough to prototype directly; §2 (state machine), §4 (echo-safety
+signal), §6 (sticky language bias), and §7 (debug instrumentation) are genuinely open and
+this doc proposes rather than implements them.
 
 ## 1. Per-direction configuration model
 
@@ -25,6 +26,30 @@ for the standalone-extraction goal"). See `config.rs`:
 This part doesn't need developer sign-off — it's a direct implementation of what
 `CLAUDE.md` §Phase 3.1 already specified. Flagging it here only so the full config
 surface is visible in one place before §2 depends on it.
+
+### 1a. `DirectionMode::Off` (implemented, no sign-off needed)
+
+**The vision:** live/push-to-talk isn't actually the full set of states a direction can be
+in during real use. Ambient mode listening in both directions all the time is the
+headline feature, but it's not always what you want — if you're the only one wearing
+headphones, you don't need your own English translated into spoken Spanish TTS playing to
+no one; you just want to *hear* the other person's Spanish translated, one direction only.
+Without an explicit "off," that's either impossible to express cleanly, or gets faked by
+overloading `PushToTalk` with a button nobody presses — which is a lie about what's
+actually happening and would confuse the settings UI (Phase 5) and the state machine (§2)
+alike, since "armed but nobody's holding the button" and "intentionally disabled" are not
+the same thing to `pipeline.rs`.
+
+Added a third `DirectionMode::Off` variant instead of leaving this implicit. Rationale for
+doing it now rather than deferring: it's a UniFFI enum consumed by both `config.rs`'s
+internal logic and the eventual settings UI (Phase 5) — the cost of adding a variant is a
+few lines today, versus a breaking change to a public interface plus a UI rework later.
+`ffi.rs`'s `push_audio_chunk` already short-circuits before reaching the translated-text
+callback when the target direction is `Off` (chunks are still counted, so callers can
+confirm audio is arriving, but nothing is ever emitted) — see `ffi.rs` and
+`tests/ffi_roundtrip.py` for the exercised behavior. Real VAD/ASR (Phase 4) should treat
+`Off` the same way: skip the direction before doing any work, not just suppress its output
+after running inference anyway.
 
 ## 2. State machine — DECISION NEEDED
 
@@ -216,6 +241,89 @@ per-direction pipeline; language ID doesn't need to be a fourth), revisit Option
 if/when the crate is actually being extracted standalone and MLKit's Java dependency
 becomes a real blocker rather than a hypothetical one.
 
+## 6. Sticky language bias for both-Live disambiguation — DECISION NEEDED
+
+**The vision:** §2 narrowed language disambiguation down to one case — both directions
+Live simultaneously — but within that case, the plan so far (§2 + §5) is a direct port of
+WalkieTalkie's approach: every utterance is judged from scratch, with no memory of what
+came before. That's a missed opportunity specific to what makes Adaptive Hybrid Mode
+different from WalkieTalkie in the first place. WalkieTalkie is turn-based and
+short-lived — a stateless per-utterance guess is a reasonable fit for it. Ambient mode is
+explicitly meant to run for an extended, continuous conversation, and real conversations
+have locality: if the last three exchanges went English→Spanish, the next ambiguous
+utterance is *much* more likely to continue that direction than to flip. Throwing that
+context away every time and re-deciding from acoustics alone (MLKit confidence, or ASR
+beam confidence per §2's fallback) leaves accuracy on the table for free — the information
+already exists in `HybridSession`, it just isn't being used yet.
+
+### Option A — Track a rolling "last resolved direction" and use it as a tiebreak
+
+When §2/§5's disambiguation logic (MLKit result, or the confidence-score fallback) produces
+a close call — not a clear winner, but not a clean failure either — bias toward whichever
+direction won most recently, rather than flipping a coin or defaulting to a fixed
+direction. Concretely: `HybridSession` (or a new small `ConversationState` it owns) tracks
+the last N resolved directions; §2's dual-decode compare step consults it only when the
+primary signal (MLKit confidence, or ASR confidence delta) is itself ambiguous, not as an
+override of a confident result.
+
+**Tradeoff:** meaningfully improves the common case (a real back-and-forth conversation)
+at essentially no runtime cost — it's a lookup, not a model. Risk: if the *actual* speaker
+does flip direction (interrupts, or a third person joins), a bias that's too strong could
+mis-attribute the first utterance in the new direction. Needs a conservative weighting —
+this should nudge close calls, not override confident ones — which is a tuning question,
+not an architectural one.
+
+### Option B — No bias; keep every utterance judged independently
+
+Simpler, matches what WalkieTalkie already does, zero risk of the mis-attribution failure
+mode above. Leaves the accuracy improvement on the table.
+
+**Recommendation:** Option A, but scoped narrowly — a tiebreak for genuinely ambiguous
+cases only, never a substitute for the primary signal. This is small enough to fold into
+whichever §2 option ships (it lives inside the disambiguation step, doesn't change the
+UniFFI surface), so it doesn't need to block Phase 4 the way §2/§4/§5 do; flagging it here
+so it's a deliberate inclusion or a deliberate deferral, not an oversight.
+
+## 7. VAD/echo-window field instrumentation — DECISION NEEDED
+
+**The vision:** `CLAUDE.md` and `docs/echo-safety-analysis.md` both name Bluetooth
+feedback as the single highest-risk unknown in the whole project, resolvable only by
+testing with the developer's actual headphones on the actual device. As currently scoped,
+that testing produces only a subjective read — did it feed back or not, by ear — with
+nothing to look at afterward if it did. That's a thin basis for tuning §4's playback-window
+timing or deciding between §4's Option A (hard mute) and Option B (sensitivity
+adjustment), both of which are explicitly gated on exactly this kind of on-device data.
+
+### Option A — Add an optional debug callback surfacing VAD/playback-window events
+
+A second, optional listener interface (or an extra method on `TranslationListener`,
+behind a `debug: bool` flag set at session construction) that fires on every VAD state
+transition and every playback-window toggle, each timestamped:
+`on_debug_event(direction, event, timestamp_ms)` with events like `VadTriggered`,
+`VadSuppressedByPlayback`, `PlaybackWindowStarted`, `PlaybackWindowEnded`. Java logs these
+to a file during field testing. Afterward, a feedback incident shows up as a concrete
+timeline — e.g. "VAD triggered 340ms after playback window closed" — instead of a memory
+of whether it sounded bad. This is the kind of data that turns §4's Option A vs. Option B
+decision from a guess into something measured.
+
+**Tradeoff:** small, additive surface (an optional callback, off by default, no effect on
+the non-debug path) — cheap to build now alongside §3's other callback plumbing, which
+already exists. Downside is purely scope: it's instrumentation, not user-facing
+functionality, and could be deferred until Phase 4's on-device testing actually begins
+rather than built speculatively now.
+
+### Option B — No instrumentation; rely on the developer's ear during testing
+
+Zero additional work. Matches the phase plan as written today. Risk: iterating on §4's
+timing (whichever option ships) becomes trial-and-error with no data to converge faster,
+during the project's explicitly highest-risk phase.
+
+**Recommendation:** Option A, but timed for early Phase 4 rather than Phase 2/3 — it's
+cheap enough to add right before the first on-device echo test, and building it too early
+(before §2/§4 are settled) risks instrumenting an interface that's about to change shape
+anyway. Worth deciding now only so it's on the Phase 4 checklist rather than improvised
+mid-testing when something already sounds wrong.
+
 ## Summary: what needs the developer's answer before Phase 4 starts
 
 1. §2 — Option A (two independent loops) vs. Option B (single shared loop)? (recommend A)
@@ -224,6 +332,12 @@ becomes a real blocker rather than a hypothetical one.
 3. §5 — Option A (reuse MLKit via Java) vs. Option B (Rust-native)? (recommend A)
 4. §3's open question — should push-to-talk audio share `push_audio_chunk` with Live
    audio, or use a separate ingestion method? (leaning toward sharing, not yet confirmed)
+5. §6 — include the sticky-language-bias tiebreak, or keep every utterance judged
+   independently like WalkieTalkie does? (recommend including it, scoped narrowly as a
+   tiebreak only — small enough to fold into §2's implementation either way)
+6. §7 — build the optional VAD/echo-window debug callback before Phase 4's on-device
+   testing begins, or skip it and rely on the developer's ear? (recommend building it,
+   timed for right before the first echo test rather than now)
 
-Everything else in this doc (§1, and the parts of §3 already implemented) is either
+Everything else in this doc (§1/§1a, and the parts of §3 already implemented) is either
 already built in Phase 2 code or narrow enough not to need a separate sign-off round.

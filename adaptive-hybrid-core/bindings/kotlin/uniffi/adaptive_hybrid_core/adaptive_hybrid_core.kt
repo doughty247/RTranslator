@@ -2359,12 +2359,20 @@ public object FfiConverterTypeDirection: FfiConverterRustBuffer<Direction> {
  * button-triggered with phone-speaker output. See
  * `docs/adaptive-hybrid-mode-design.md` for why these can't share a state
  * machine.
+ *
+ * `Off` disables the direction entirely (no listening, no output) — added
+ * per `docs/adaptive-hybrid-mode-design.md` §1a rather than left implicit,
+ * since "not started" and "explicitly off" would otherwise be two different
+ * things for the pipeline (Phase 4) to reconcile, and retrofitting a third
+ * enum variant after the UniFFI surface and settings UI both bind to a
+ * two-value enum is more disruptive than adding it now.
  */
 
 enum class DirectionMode {
     
     LIVE,
-    PUSH_TO_TALK;
+    PUSH_TO_TALK,
+    OFF;
     companion object
 }
 

@@ -71,6 +71,12 @@ def main():
     assert "1600 samples" in text
     assert "es" in text, "should route to first_to_second's configured target language"
 
+    config.set_mode(core.Direction.FIRST_TO_SECOND, core.DirectionMode.OFF)
+    listener.calls.clear()
+    session.push_audio_chunk(core.Direction.FIRST_TO_SECOND, pcm)
+    assert session.chunks_received() == 2, "Off still counts receipt, per ffi.rs's contract"
+    assert len(listener.calls) == 0, "Off must never reach the listener"
+
     session.stop()
     assert not session.is_running()
 

@@ -21,10 +21,18 @@ pub enum Direction {
 /// button-triggered with phone-speaker output. See
 /// `docs/adaptive-hybrid-mode-design.md` for why these can't share a state
 /// machine.
+///
+/// `Off` disables the direction entirely (no listening, no output) — added
+/// per `docs/adaptive-hybrid-mode-design.md` §1a rather than left implicit,
+/// since "not started" and "explicitly off" would otherwise be two different
+/// things for the pipeline (Phase 4) to reconcile, and retrofitting a third
+/// enum variant after the UniFFI surface and settings UI both bind to a
+/// two-value enum is more disruptive than adding it now.
 #[derive(uniffi::Enum, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DirectionMode {
     Live,
     PushToTalk,
+    Off,
 }
 
 #[derive(Debug, Clone)]
@@ -114,6 +122,14 @@ mod tests {
         assert_eq!(
             config.mode(Direction::SecondToFirst),
             DirectionMode::PushToTalk
+        );
+
+        config.set_mode(Direction::SecondToFirst, DirectionMode::Off);
+        assert_eq!(config.mode(Direction::SecondToFirst), DirectionMode::Off);
+        assert_eq!(
+            config.mode(Direction::FirstToSecond),
+            DirectionMode::PushToTalk,
+            "switching a direction to Off must not affect the other direction"
         );
     }
 }
