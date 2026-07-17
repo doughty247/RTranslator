@@ -7,3 +7,6 @@
 .externalNativeBuild
 app/.cxx
 app/release
+
+# Rust
+/adaptive-hybrid-core/target
