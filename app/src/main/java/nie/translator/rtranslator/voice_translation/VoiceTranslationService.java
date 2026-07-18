@@ -134,10 +134,12 @@ public abstract class VoiceTranslationService extends GeneralService {
         ttsListener = new UtteranceProgressListener() {
             @Override
             public void onStart(String s) {
+                onTTSStart(s);
             }
 
             @Override
             public void onDone(String s) {
+                onTTSDone(s);
                 synchronized (mLock) {
                     if (utterancesCurrentlySpeaking > 0) {
                         utterancesCurrentlySpeaking--;
@@ -165,9 +167,29 @@ public abstract class VoiceTranslationService extends GeneralService {
 
             @Override
             public void onError(String s) {
+                onTTSError(s);
             }
         };
         initializeTTS();
+    }
+
+    /**
+     * Empty-by-default hooks into the shared TTS lifecycle, added so subclasses with
+     * different echo-safety needs than {@link #shouldDeactivateMicDuringTTS}'s blunt
+     * "always stop the mic during TTS" can hook in without altering this shared method
+     * (WalkieTalkie/Conversation both rely on the existing behavior unchanged).
+     * AdaptiveHybridService uses these to call the Rust pipeline's
+     * notify_playback_window signal (docs/adaptive-hybrid-mode-design.md §4) around TTS
+     * playback, since its mic gating is VAD-based in Rust rather than an on/off switch
+     * here.
+     */
+    protected void onTTSStart(String utteranceId) {
+    }
+
+    protected void onTTSDone(String utteranceId) {
+    }
+
+    protected void onTTSError(String utteranceId) {
     }
 
     private void initializeTTS() {

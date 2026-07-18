@@ -60,19 +60,39 @@ cargo test                         # unit tests + integration tests (see tests/,
 bash tests/run_ffi_roundtrip.sh    # builds the cdylib, generates Python bindings, runs the FFI round trip
 ```
 
-Regenerate the Kotlin bindings committed under `bindings/kotlin/` (for Android integration
-review — not yet wired into the app shell) with:
+Regenerate the Kotlin bindings committed under `bindings/kotlin/` (copied into
+`app/src/main/java/uniffi/adaptive_hybrid_core/` for the app to actually use — that copy
+needs to be refreshed by hand after regenerating, this crate doesn't symlink or build
+against the app module) with:
 
 ```sh
 cargo build --lib
 cargo run --bin uniffi-bindgen -- generate --library target/debug/libadaptive_hybrid_core.so \
     --language kotlin --out-dir bindings/kotlin
+cp bindings/kotlin/uniffi/adaptive_hybrid_core/adaptive_hybrid_core.kt \
+    ../app/src/main/java/uniffi/adaptive_hybrid_core/adaptive_hybrid_core.kt
 ```
 
+### Building the Android native library
+
 Cross-compiling for Android (`aarch64-linux-android`, matching the app's `arm64-v8a`
-`abiFilters`) needs the Android NDK, which was not available in the environment this
-skeleton was built in — that step is unverified and should be set up and documented before
-Phase 4 implementation begins in earnest.
+`abiFilters`) needs the Android NDK, which was not available in the environment this crate
+was built in — **this step has never been run or verified**. Once the NDK is installed:
+
+```sh
+cargo install cargo-ndk   # one-time
+rustup target add aarch64-linux-android   # one-time
+cargo ndk -t arm64-v8a -o ../app/src/main/jniLibs build --release
+```
+
+This should produce `../app/src/main/jniLibs/arm64-v8a/libadaptive_hybrid_core.so` — the
+generated Kotlin bindings load it via JNA (`Native.load("adaptive_hybrid_core", ...)`,
+see `adaptive_hybrid_core.kt`'s `findLibraryName`), which resolves the `lib`/`.so`
+naming convention automatically from that `jniLibs/<abi>/` layout, the same convention
+Android's own `System.loadLibrary` uses. `ORT_DYLIB_PATH` (see the `ort` linking section
+below) also needs to be set to wherever the app's existing ONNX Runtime `.so` lands at
+runtime — likely something derived from `Context.getApplicationInfo().nativeLibraryDir`,
+not a build-time constant, since that path is only known once the APK is installed.
 
 ### `ort` / ONNX Runtime linking
 

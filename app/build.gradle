@@ -100,6 +100,14 @@ dependencies {
     // before building, or this dependency line has nothing to resolve.
     implementation fileTree(include: ['*.jar', '*.aar'], dir: 'libs')
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    // adaptive-hybrid-core's UniFFI-generated Kotlin bindings
+    // (app/src/main/java/uniffi/adaptive_hybrid_core/) load the Rust cdylib through JNA
+    // rather than a plain System.loadLibrary call -- this is UniFFI's own choice, not
+    // something this app's build controls. The native .so itself
+    // (libadaptive_hybrid_core.so, built via `cargo ndk` for aarch64-linux-android, see
+    // adaptive-hybrid-core/README.md) needs the Android NDK to produce, which this
+    // development environment didn't have -- see docs/adaptive-hybrid-mode-changelog.md.
+    implementation "net.java.dev.jna:jna:5.14.0@aar"
     // Support libraries
     implementation "com.google.android.material:material:1.9.0"  //1.9.0
     implementation "androidx.cardview:cardview:1.0.0"
