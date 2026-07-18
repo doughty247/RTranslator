@@ -108,6 +108,13 @@ dependencies {
     // solo-conversation-core/README.md) needs the Android NDK to produce, which this
     // development environment didn't have -- see docs/solo-conversation-mode-changelog.md.
     implementation "net.java.dev.jna:jna:5.14.0@aar"
+    // sherpa-onnx's own pretrained voices (see NeuralTtsManager.VOICE_CATALOG) are
+    // distributed by upstream only as .tar.bz2 archives (confirmed against
+    // k2-fsa/sherpa's docs/source/onnx/tts/pretrained_models/vits.rst) -- there is no
+    // flat-file download option. Android's built-in java.util.zip only handles
+    // ZIP/GZIP, not bzip2/tar, so VoiceModelDownloader needs a real tar+bzip2 reader;
+    // Commons Compress is Apache-2.0, matching the rest of this project's licensing.
+    implementation 'org.apache.commons:commons-compress:1.26.0'
     // Support libraries
     implementation "com.google.android.material:material:1.9.0"  //1.9.0
     implementation "androidx.cardview:cardview:1.0.0"

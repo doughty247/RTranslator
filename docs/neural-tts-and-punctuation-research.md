@@ -110,3 +110,25 @@ already requires to run at all, since its incremental RAM cost is small relative
 Whisper/NLLB's own footprint. These numbers are starting points, not measured — nothing in
 this sandbox can profile actual peak RAM with Whisper+NLLB+sherpa-onnx all resident at
 once; confirm on-device before finalizing.
+
+## Addendum: real voice catalog filenames confirmed (voice download, not the .aar itself)
+
+The note above about the release-download host being unreachable still applies to
+sherpa-onnx's Android `.aar`/native library release (see app/libs/README.md — that still
+needs a developer to fetch it manually, unconfirmed here). It does **not** apply anymore to
+the *voice model* filenames in `NeuralTtsManager.VOICE_CATALOG`: a shallow clone of
+`k2-fsa/sherpa` (the separate docs source repo, reachable even though the GitHub
+release-download/API host wasn't) has the exact "Download the model" shell commands for
+each pretrained voice in `docs/source/onnx/tts/pretrained_models/vits.rst`, which is how
+the current catalog's one real entry (`en_US-lessac-medium`) and
+`VoiceModelDownloader.BASE_URL` were pinned. That same doc confirms every voice ships as a
+single `.tar.bz2` (model + tokens.txt + a bundled `espeak-ng-data/`), not flat files — the
+original placeholder downloader's two-flat-files assumption was wrong and has been rewritten
+to download-and-extract the archive instead (`org.apache.commons:commons-compress` added
+for tar+bzip2 support, since `java.util.zip` doesn't cover bzip2).
+
+Still unverified: filenames for any language beyond `en` — the docs source only documents
+English and Chinese voices in detail even though upstream states 100+ voices/40+ languages
+exist on the release page itself, and this sandbox can't browse that release page (blocked
+by the environment's GitHub access scoping, not a network-reachability issue this time).
+See `NeuralTtsManager`'s class doc for the exact extension procedure.
