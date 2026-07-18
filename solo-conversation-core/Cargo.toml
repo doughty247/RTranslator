@@ -16,8 +16,11 @@ sentencepiece = "0.11"
 thiserror = "1.0"
 parking_lot = "0.12"
 whatlang = "0.18.0"
-
-[dev-dependencies]
+# Desktop (Linux/Windows/macOS) audio capture for bin/desktop-harness.rs --
+# cpal is the standard cross-platform Rust audio I/O crate (ALSA on Linux,
+# WASAPI on Windows, CoreAudio on macOS), used only by that binary, not by
+# any of the library code Android's UniFFI bindings link against.
+cpal = "0.15"
 hound = "3.5"
 
 [build-dependencies]
@@ -26,3 +29,7 @@ uniffi = { version = "0.29", features = ["build"] }
 [[bin]]
 name = "uniffi-bindgen"
 path = "uniffi-bindgen.rs"
+
+[[bin]]
+name = "desktop-harness"
+path = "bin/desktop-harness.rs"

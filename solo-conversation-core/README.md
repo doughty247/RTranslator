@@ -43,6 +43,55 @@ Phase 5's real ASR/MT inference, not a design question. What's here:
   field instrumentation). Fully wired to `pipeline.rs`; `resolve_utterance`'s placeholder
   text is the only remaining stub, standing in for the real ASR/MT call.
 - `error.rs` — the shared error type crossing the boundary.
+- `bin/desktop-harness.rs` — a desktop (Linux/Windows/macOS) CLI demo: feeds
+  real audio (a WAV file, or a live mic via `cpal`) through the exact same
+  `HybridSession::push_audio_chunk` surface Android's capture loop calls
+  through. `wav` mode is genuinely live-verified in this sandbox (see
+  `tests/desktop_harness_wav.rs`, which runs the compiled binary against a
+  synthetic tone-burst WAV and asserts real VAD/translation-callback output,
+  not just a pipeline unit test); `mic` mode is written against `cpal`'s
+  documented API but **not run** here — this container has no audio
+  hardware at all (`/proc/asound/cards` doesn't exist), so it fails cleanly
+  with an explanatory message rather than actually capturing anything. See
+  `bin/desktop-harness.rs`'s module doc.
+
+## Platform targets
+
+This crate's own code (`config.rs`, `vad.rs`, `langid.rs`, `pipeline.rs`, `asr.rs`, `mt.rs`,
+`ffi.rs`) has no Android-specific dependency anywhere — no JNI, no Android NDK types, no
+`android_log` calls. The only Android-specific pieces in this whole picture live outside
+this crate, on the Java/Kotlin side (`app/src/main/java/.../SoloConversationService.kt`'s
+`AudioRecord` capture, the JNA-based native library loading in the generated bindings). That
+split was deliberate from Phase 2 onward, specifically so this crate could target other
+platforms later without a rewrite.
+
+**Current focus, per developer direction: Android (existing) plus Linux/Windows/macOS
+desktop support**, tracked as its own work (see the desktop harness note below, once it
+lands). Both are realistic near-term targets — desktop audio I/O only needs a
+cross-platform crate (`cpal`) wired to the same `HybridSession`/`push_audio_chunk` surface
+Android's `AudioRecord` path already calls through, no new FFI surface required.
+
+**iOS is intentionally out of scope for now — stubbed as a future target, not started.**
+Recording this rather than leaving it unstated, since it was raised and explicitly deferred
+rather than forgotten:
+
+- The Rust core itself needs no changes to support iOS — `uniffi-rs` (already in use for
+  the Kotlin bindings) generates Swift bindings from the same `#[uniffi::export]` surface
+  with no source changes to this crate, the same way it generated Kotlin's.
+- What iOS support would actually require, none of which has been attempted here: cross-
+  compiling for `aarch64-apple-ios`/`aarch64-apple-ios-sim` (needs Xcode's toolchain, only
+  available on macOS — this sandbox is Linux-only and cannot produce or verify an iOS
+  build), an iOS-side audio capture implementation (`AVAudioEngine`, analogous to Android's
+  `AudioRecord` path but a from-scratch implementation, not a code-share), generating and
+  wiring the Swift UniFFI bindings, and bundling ONNX Runtime's iOS build (a separate
+  artifact from the Android `.so` this project already depends on) since `ort`'s
+  `load-dynamic` linking approach from the Android section above applies equally on iOS but
+  points at a different native library file.
+- None of the above is technically blocked — it's simply not attempted, for lack of a Mac
+  to build and verify against, and because it wasn't the direction prioritized. Revisit once
+  Android + desktop are further along, or sooner if a macOS/Xcode environment becomes
+  available to actually verify a build against rather than writing another set of unbuilt,
+  unverified code.
 
 ## Why no `.udl` file
 
@@ -72,6 +121,25 @@ cargo run --bin uniffi-bindgen -- generate --library target/debug/libsolo_conver
 cp bindings/kotlin/uniffi/solo_conversation_core/solo_conversation_core.kt \
     ../app/src/main/java/uniffi/solo_conversation_core/solo_conversation_core.kt
 ```
+
+### Running the desktop CLI demo
+
+```sh
+cargo run --bin desktop-harness -- wav <path/to/file.wav> [--first en] [--second es]
+cargo run --bin desktop-harness -- mic [--first en] [--second es]
+```
+
+`wav` mode needs no audio hardware and is a real, run-in-this-sandbox
+verification of the desktop audio path — see `bin/desktop-harness.rs`'s
+module doc and `tests/desktop_harness_wav.rs`. `mic` mode uses `cpal`
+(ALSA/WASAPI/CoreAudio) and needs a real input device; it has not been run
+against actual hardware here.
+
+On Linux, `cpal`'s ALSA backend needs `libasound2-dev` at build time
+(`pkg-config`-discoverable `-lasound`) — installed in this sandbox to build
+and test this, but not something `cargo build` pulls in automatically the
+way pure-Rust dependencies are. Confirm it's present on any other machine
+building this crate.
 
 ### Building the Android native library
 
@@ -140,6 +208,12 @@ downloads from a host the environment's network policy blocks). Concretely:
 - Kotlin bindings generation (`uniffi-bindgen generate --language kotlin`) was run and its
   output committed under `bindings/kotlin/` for review, but has not been compiled or run
   from a real Android/Kotlin toolchain.
+- `bin/desktop-harness.rs`'s `wav` mode — **actually run**, against a synthetic WAV file,
+  through the real compiled binary (`tests/desktop_harness_wav.rs`), confirming
+  `push_audio_chunk` -> VAD phase transitions -> `UtteranceReady` ->
+  `TranslationListener` callback all work through genuine (if synthetic) audio, not just
+  pipeline-level unit tests. Its `mic` mode (`cpal`) is written but **not run** — no audio
+  hardware in this sandbox at all.
 
 **Before wiring real ASR/MT into `asr.rs`/`mt.rs`'s decode loops, re-run against the real
 model files (sideloaded per `../Sideloading.md`) and confirm on the Pixel 9 Pro XL.** The
