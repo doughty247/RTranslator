@@ -17,6 +17,7 @@
 
 
 apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
 
 ext {
     supportLibraryVersion = '1.0.0'
@@ -70,6 +71,13 @@ android {
         // but continue the build even when errors are found:
         abortOnError false
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
     configurations.all {
         resolutionStrategy.force 'com.google.code.findbugs:jsr305:3.0.2'
         resolutionStrategy.force "com.android.support:support-annotations:$supportLibraryVersion"
@@ -85,7 +93,13 @@ android {
 }
 
 dependencies {
-    //implementation fileTree(include: ['*.jar'], dir: 'libs')
+    // sherpa-onnx's Android release ships a local .aar (not a Maven coordinate) -- see
+    // docs/neural-tts-and-punctuation-research.md for why (Piper's own license moved to
+    // GPL-3.0, sherpa-onnx wraps it under Apache-2.0 instead) and where to fetch it from.
+    // Not present in this checkout; place the downloaded .aar at app/libs/sherpa-onnx.aar
+    // before building, or this dependency line has nothing to resolve.
+    implementation fileTree(include: ['*.jar', '*.aar'], dir: 'libs')
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     // Support libraries
     implementation "com.google.android.material:material:1.9.0"  //1.9.0
     implementation "androidx.cardview:cardview:1.0.0"

@@ -176,6 +176,20 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         languagePreference.setFragment(this);
         languagePreference.initializeLanguagesList();
 
+        // neural tts toggle initialization
+        NeuralTtsPreference neuralTtsPreference = (NeuralTtsPreference) findPreference("enableNeuralTts");
+        neuralTtsPreference.setFragment(this);
+
+        // link to the optional voice model download screen
+        Preference downloadNeuralTtsVoicesPreference = findPreference("downloadNeuralTtsVoices");
+        downloadNeuralTtsVoicesPreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            @Override
+            public boolean onPreferenceClick(Preference preference) {
+                activity.startActivity(new Intent(activity, nie.translator.rtranslator.tools.tts.VoiceDownloadActivity.class));
+                return true;
+            }
+        });
+
         // link tts settings initialization
         Preference ttsPreference = findPreference("tts");
         ttsPreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {

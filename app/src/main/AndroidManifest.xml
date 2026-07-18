@@ -85,6 +85,8 @@
             android:launchMode="singleTask"
             android:theme="@style/Theme.Speech" />
         <activity android:name="nie.translator.rtranslator.GeneralActivity" />
+        <activity android:name="nie.translator.rtranslator.tools.tts.VoiceDownloadActivity"
+            android:theme="@style/Theme.Settings" />
         <activity android:name="nie.translator.rtranslator.tools.ImageActivity"
             android:exported="true"
             android:launchMode="singleTask"

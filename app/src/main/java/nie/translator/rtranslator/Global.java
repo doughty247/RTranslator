@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import nie.translator.rtranslator.access.AccessActivity;
 import nie.translator.rtranslator.tools.CustomLocale;
 import nie.translator.rtranslator.tools.TTS;
+import nie.translator.rtranslator.tools.tts.NeuralTtsTier;
 import nie.translator.rtranslator.voice_translation._conversation_mode.communication.ConversationBluetoothCommunicator;
 import nie.translator.rtranslator.bluetooth.BluetoothCommunicator;
 import nie.translator.rtranslator.bluetooth.Peer;
@@ -745,6 +746,33 @@ public class Global extends Application implements DefaultLifecycleObserver {
         long totalMemory = memInfo.availMem;
         android.util.Log.i("memory", "Total memory: " + totalMemory);
         return totalMemory / 1000000L;
+    }
+
+    // Minimum total RAM (MB) to offer the low-quality neural TTS tier (small VITS/Piper-style
+    // voices, ~20-30MB) -- set to the same baseline the app already requires to run at all
+    // (README: "6GB+ RAM"; NoticeFragment already warns below 5000MB), since a low-quality
+    // voice's incremental RAM cost is small relative to Whisper/NLLB's own footprint.
+    // See docs/neural-tts-and-punctuation-research.md -- these are starting points, not
+    // measured against real peak RAM with Whisper+NLLB+TTS all resident; confirm on-device.
+    public static final long NEURAL_TTS_LOW_TIER_MIN_RAM_MB = 6000;
+    // Minimum total RAM (MB) to offer medium/high-quality tiers (~60-80MB / ~100MB+ voices).
+    // Set above Recognizer.java's existing 7000MB ONNX-optimization threshold, since this is
+    // additional load on top of an already RAM-intensive ASR+MT pipeline, not a replacement.
+    public static final long NEURAL_TTS_HIGH_TIER_MIN_RAM_MB = 8000;
+
+    /**
+     * Highest neural TTS quality tier this device's total RAM qualifies for, or
+     * NeuralTtsTier.NONE if even the low tier isn't safe to offer.
+     */
+    public NeuralTtsTier getMaxEligibleNeuralTtsTier() {
+        long totalRam = getTotalRamSize();
+        if (totalRam >= NEURAL_TTS_HIGH_TIER_MIN_RAM_MB) {
+            return NeuralTtsTier.HIGH;
+        } else if (totalRam >= NEURAL_TTS_LOW_TIER_MIN_RAM_MB) {
+            return NeuralTtsTier.LOW;
+        } else {
+            return NeuralTtsTier.NONE;
+        }
     }
 
     /**

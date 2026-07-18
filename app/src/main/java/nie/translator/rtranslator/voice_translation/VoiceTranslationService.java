@@ -34,12 +34,18 @@ import androidx.annotation.Nullable;
 import java.util.ArrayList;
 import nie.translator.rtranslator.GeneralService;
 import nie.translator.rtranslator.bluetooth.tools.Timer;
+import nie.translator.rtranslator.Global;
 import nie.translator.rtranslator.tools.CustomLocale;
 import nie.translator.rtranslator.tools.TTS;
 import nie.translator.rtranslator.tools.Tools;
 import nie.translator.rtranslator.tools.gui.messages.GuiMessage;
 import nie.translator.rtranslator.tools.services_communication.ServiceCallback;
 import nie.translator.rtranslator.tools.services_communication.ServiceCommunicator;
+import nie.translator.rtranslator.tools.tts.NeuralTts;
+import nie.translator.rtranslator.tools.tts.NeuralTtsManager;
+
+import java.util.HashMap;
+import java.util.Map;
 import nie.translator.rtranslator.voice_translation.neural_networks.voice.RecognizerListener;
 import nie.translator.rtranslator.voice_translation.neural_networks.voice.Recorder;
 
@@ -89,6 +95,9 @@ public abstract class VoiceTranslationService extends GeneralService {
     protected UtteranceProgressListener ttsListener;
     @Nullable
     protected TTS tts;
+    @Nullable
+    private NeuralTtsManager neuralTtsManager;
+    private final Map<String, NeuralTts> neuralTtsByLanguage = new HashMap<>();
     protected Handler mainHandler;
     private static final long WAKELOCK_TIMEOUT = 600 * 1000L;  // 10 minutes, so if the service stopped without calling onDestroyed the wakeLock would still be released within 10 minutes (the wakeLock will be reacquired before the 10 minutes if the service is still running)
     private Timer wakeLockTimer;  // to reactivate the timer every 10 minutes, so as long as the service is active the wakelock will never expire
@@ -266,14 +275,35 @@ public abstract class VoiceTranslationService extends GeneralService {
 
     public synchronized void speak(String result, CustomLocale language, String id) {
         synchronized (mLock) {
+            if (id == null) {
+                id = String.valueOf(System.currentTimeMillis());
+            }
+
+            // Neural TTS (docs/neural-tts-and-punctuation-research.md) takes over only
+            // when the setting is on, this device's RAM qualifies, and a voice model is
+            // actually downloaded for this specific language -- otherwise falls straight
+            // through to the existing system-TTS path below, unchanged. `ttsListener` is
+            // reused directly (see NeuralTts.java's constructor doc) so the mic
+            // reactivation logic in this class's onCreate() fires the same way regardless
+            // of which backend spoke.
+            if (!isAudioMute) {
+                NeuralTts neuralTts = getNeuralTtsIfAvailable(language);
+                if (neuralTts != null) {
+                    utterancesCurrentlySpeaking++;
+                    if (shouldDeactivateMicDuringTTS()) {
+                        stopVoiceRecorder();
+                        notifyMicDeactivated();
+                    }
+                    neuralTts.speak(result, id);
+                    return;
+                }
+            }
+
             if (tts != null && tts.isActive() && !isAudioMute) {
                 utterancesCurrentlySpeaking++;
                 if (shouldDeactivateMicDuringTTS()) {
                     stopVoiceRecorder();
                     notifyMicDeactivated();   // we notify the client
-                }
-                if (id == null) {
-                    id = String.valueOf(System.currentTimeMillis());
                 }
                 if (tts.getVoice() != null && language.equals(new CustomLocale(tts.getVoice().getLocale()))) {
                     tts.speak(result, TextToSpeech.QUEUE_ADD, null, id);
@@ -283,6 +313,38 @@ public abstract class VoiceTranslationService extends GeneralService {
                 }
             }
         }
+    }
+
+    /**
+     * Lazily creates (and caches, per language) a {@link NeuralTts} instance if the
+     * feature is enabled, this device is RAM-eligible, and a voice model has been
+     * downloaded for {@code language} -- returns null otherwise, meaning "use system TTS."
+     * A fresh {@link NeuralTts} per language is intentional: sherpa-onnx's {@code
+     * OfflineTts} is constructed from one specific voice's model files, unlike Android's
+     * {@code TextToSpeech} which can switch {@code Locale} on one shared instance.
+     */
+    @Nullable
+    private NeuralTts getNeuralTtsIfAvailable(CustomLocale language) {
+        if (!(getApplication() instanceof Global)) {
+            return null;
+        }
+        Global global = (Global) getApplication();
+        if (neuralTtsManager == null) {
+            neuralTtsManager = new NeuralTtsManager(global);
+        }
+        if (!neuralTtsManager.isAvailableFor(language)) {
+            return null;
+        }
+        String languageKey = language.getLocale().getLanguage();
+        NeuralTts cached = neuralTtsByLanguage.get(languageKey);
+        if (cached != null && cached.isActive()) {
+            return cached;
+        }
+        NeuralTts created = neuralTtsManager.create(language, ttsListener);
+        if (created != null) {
+            neuralTtsByLanguage.put(languageKey, created);
+        }
+        return created;
     }
 
     protected boolean shouldDeactivateMicDuringTTS() {
@@ -359,6 +421,10 @@ public abstract class VoiceTranslationService extends GeneralService {
             tts.stop();
             tts.shutdown();
         }
+        for (NeuralTts neuralTts : neuralTtsByLanguage.values()) {
+            neuralTts.release();
+        }
+        neuralTtsByLanguage.clear();
         //stop foreground
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             stopForeground(Service.STOP_FOREGROUND_REMOVE);

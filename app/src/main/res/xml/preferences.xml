@@ -74,6 +74,17 @@
             android:title="@string/preference_title_tts"
             android:summary="@string/preference_description_tts"
             app:iconSpaceReserved="false" />
+        <nie.translator.rtranslator.settings.NeuralTtsPreference
+            android:defaultValue="false"
+            android:key="enableNeuralTts"
+            android:title="@string/preference_title_neural_tts"
+            android:summary="@string/preference_description_neural_tts"
+            app:iconSpaceReserved="false" />
+        <androidx.preference.Preference
+            android:key="downloadNeuralTtsVoices"
+            android:title="@string/preference_title_download_neural_tts_voices"
+            android:summary="@string/preference_description_download_neural_tts_voices"
+            app:iconSpaceReserved="false" />
     </androidx.preference.PreferenceCategory>
     <androidx.preference.PreferenceCategory
         android:title="@string/preference_header_advanced"
