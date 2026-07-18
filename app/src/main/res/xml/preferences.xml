@@ -63,9 +63,9 @@
             android:dialogTitle="Application language"
             app:iconSpaceReserved="false" />
         <androidx.preference.Preference
-            android:key="adaptiveHybridMode"
-            android:title="@string/home_adaptive_hybrid_mode"
-            android:summary="@string/preference_description_adaptive_hybrid_mode"
+            android:key="soloConversationMode"
+            android:title="@string/home_solo_conversation_mode"
+            android:summary="@string/preference_description_solo_conversation_mode"
             app:iconSpaceReserved="false" />
     </androidx.preference.PreferenceCategory>
 

@@ -1,9 +1,9 @@
-//! Adaptive Hybrid Mode core: per-direction live/push-to-talk speech
+//! Solo Conversation mode core: per-direction live/push-to-talk speech
 //! translation, called from RTranslator's Java app shell via UniFFI.
 //!
 //! See `README.md` for scope, licensing (NLLB is non-commercial-only, see
 //! there), and current build status. See `docs/model-artifact-contract.md`
-//! and `docs/adaptive-hybrid-mode-design.md` (repo root `docs/`) for the
+//! and `docs/solo-conversation-mode-design.md` (repo root `docs/`) for the
 //! design this crate implements.
 
 pub mod asr;

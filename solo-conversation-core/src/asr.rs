@@ -38,7 +38,7 @@ pub struct WhisperModel {
 
 impl WhisperModel {
     /// `model_dir` is the directory the Java side already stages these files
-    /// into (`Context.getFilesDir()` on-device) — Adaptive Hybrid Mode reuses
+    /// into (`Context.getFilesDir()` on-device) — Solo Conversation mode reuses
     /// that location rather than re-downloading or re-staging.
     ///
     /// `ort_dylib_path` is forwarded to `runtime_guard::ensure_available` —

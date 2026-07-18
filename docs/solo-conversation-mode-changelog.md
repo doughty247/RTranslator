@@ -1,7 +1,7 @@
-# Adaptive Hybrid Mode — Changelog & Summary
+# Solo Conversation mode — Changelog & Summary
 
 This document summarizes everything built on branch `claude/rtranslator-1fdvtf` toward
-Adaptive Hybrid Mode: a new RTranslator mode where each translation direction is
+Solo Conversation mode: a new RTranslator mode where each translation direction is
 independently switchable between **live/ambient** (continuous listening, headphone output)
 and **push-to-talk** (button-triggered, speaker output). Full background and phase plan
 live in the project's `CLAUDE.md`; this document covers what was actually done.
@@ -14,9 +14,9 @@ live in the project's `CLAUDE.md`; this document covers what was actually done.
   tensor pipeline, SentencePiece tokenization, and confirmed RTranslator has zero existing
   echo-cancellation code today (`docs/model-artifact-contract.md`,
   `docs/echo-safety-analysis.md`)
-- **New Rust crate** `adaptive-hybrid-core/`, callable from the Java app shell via UniFFI,
+- **New Rust crate** `solo-conversation-core/`, callable from the Java app shell via UniFFI,
   independent of RTranslator's Java model wrappers
-- **Design doc** (`docs/adaptive-hybrid-mode-design.md`) covering six open architecture
+- **Design doc** (`docs/solo-conversation-mode-design.md`) covering six open architecture
   questions, all reviewed and decided
 - **Per-direction config**: `Live` / `PushToTalk` / `Off` modes, independently switchable
   at runtime, with per-direction source/target language tracking
@@ -53,7 +53,7 @@ live in the project's `CLAUDE.md`; this document covers what was actually done.
 
 RTranslator's two existing modes don't fit the target use case: WalkieTalkie is
 single-phone but turn-based (press to talk, or a shared "who's speaking" guess), and
-Conversation mode needs a second phone. Adaptive Hybrid Mode is a new mode built specifically
+Conversation mode needs a second phone. Solo Conversation mode is a new mode built specifically
 for one person, one phone, headphones optional, where each direction (e.g. Spanish→English
 and English→Spanish) can independently be "always listening" or "press to talk."
 
@@ -82,7 +82,7 @@ Before writing any new code, the existing RTranslator codebase was mapped in det
   `docs/echo-safety-analysis.md`, explaining exactly why the new mode can't reuse that
   approach as-is
 
-## The Rust crate: `adaptive-hybrid-core/`
+## The Rust crate: `solo-conversation-core/`
 
 A new, self-contained Rust crate was added rather than extending WalkieTalkie's Java code,
 per the project's design goal of keeping this logic portable and eventually
@@ -106,7 +106,7 @@ boundary.
 
 ## The design decisions
 
-A design document (`docs/adaptive-hybrid-mode-design.md`) laid out the architecture as a
+A design document (`docs/solo-conversation-mode-design.md`) laid out the architecture as a
 set of options with tradeoffs rather than a single prescribed answer, since these were
 judgment calls specific to how the app should feel to use. Six questions were reviewed and
 decided:

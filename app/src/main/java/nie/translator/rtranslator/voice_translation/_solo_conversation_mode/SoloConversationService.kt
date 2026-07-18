@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package nie.translator.rtranslator.voice_translation._adaptive_hybrid_mode
+package nie.translator.rtranslator.voice_translation._solo_conversation_mode
 
 import android.content.Context
 import android.content.Intent
@@ -30,18 +30,18 @@ import java.util.concurrent.atomic.AtomicBoolean
 import nie.translator.rtranslator.Global
 import nie.translator.rtranslator.tools.CustomLocale
 import nie.translator.rtranslator.voice_translation.VoiceTranslationService
-import uniffi.adaptive_hybrid_core.DebugListener
-import uniffi.adaptive_hybrid_core.Direction
-import uniffi.adaptive_hybrid_core.DirectionMode
-import uniffi.adaptive_hybrid_core.GateEvent
-import uniffi.adaptive_hybrid_core.HybridConfig
-import uniffi.adaptive_hybrid_core.HybridException
-import uniffi.adaptive_hybrid_core.HybridSession
-import uniffi.adaptive_hybrid_core.TranslationListener
+import uniffi.solo_conversation_core.DebugListener
+import uniffi.solo_conversation_core.Direction
+import uniffi.solo_conversation_core.DirectionMode
+import uniffi.solo_conversation_core.GateEvent
+import uniffi.solo_conversation_core.HybridConfig
+import uniffi.solo_conversation_core.HybridException
+import uniffi.solo_conversation_core.HybridSession
+import uniffi.solo_conversation_core.TranslationListener
 
 /**
- * Adaptive Hybrid Mode's service: owns the `adaptive-hybrid-core` [HybridSession] (Rust,
- * via the UniFFI bindings in `app/src/main/java/uniffi/adaptive_hybrid_core/`) and the raw
+ * Solo Conversation mode's service: owns the `solo-conversation-core` [HybridSession] (Rust,
+ * via the UniFFI bindings in `app/src/main/java/uniffi/solo_conversation_core/`) and the raw
  * [AudioRecord] capture feeding it.
  *
  * Extends [VoiceTranslationService] to reuse its TTS plumbing (including the neural TTS
@@ -50,7 +50,7 @@ import uniffi.adaptive_hybrid_core.TranslationListener
  * "always stop the mic during TTS" semantics ([shouldDeactivateMicDuringTTS]) -- this
  * mode's whole point is that a Live direction keeps listening through TTS playback,
  * gated by the Rust-side VAD/echo-safety state machine
- * (`docs/adaptive-hybrid-mode-design.md` §2/§4) instead of a blunt on/off switch here.
+ * (`docs/solo-conversation-mode-design.md` §2/§4) instead of a blunt on/off switch here.
  *
  * Binding: unlike [nie.translator.rtranslator.voice_translation._walkie_talkie_mode._walkie_talkie.WalkieTalkieService]
  * and [nie.translator.rtranslator.voice_translation._conversation_mode._conversation.ConversationService],
@@ -63,17 +63,17 @@ import uniffi.adaptive_hybrid_core.TranslationListener
  * surface for no functional benefit in this same-process case.
  *
  * <b>Unverified in this development environment</b> -- see
- * `adaptive-hybrid-core/README.md`'s "Building the Android native library" section: the
+ * `solo-conversation-core/README.md`'s "Building the Android native library" section: the
  * Rust cdylib this class calls into via [HybridSession] was never actually cross-compiled
  * or run here (no Android NDK in this sandbox). This class is written directly against
  * the UniFFI-generated Kotlin API, checked method-by-method against
- * `app/src/main/java/uniffi/adaptive_hybrid_core/adaptive_hybrid_core.kt`'s actual
+ * `app/src/main/java/uniffi/solo_conversation_core/solo_conversation_core.kt`'s actual
  * generated signatures, not assumed.
  */
-class AdaptiveHybridService : VoiceTranslationService() {
+class SoloConversationService : VoiceTranslationService() {
 
     companion object {
-        private const val TAG = "AdaptiveHybridService"
+        private const val TAG = "SoloConversationService"
         private const val SAMPLE_RATE = 16000
         private const val CHUNK_DURATION_MS = 100
         private const val CHUNK_SAMPLE_COUNT = SAMPLE_RATE * CHUNK_DURATION_MS / 1000 // 1600
@@ -93,7 +93,7 @@ class AdaptiveHybridService : VoiceTranslationService() {
     private val utteranceDirections = java.util.concurrent.ConcurrentHashMap<String, Direction>()
 
     inner class LocalBinder : Binder() {
-        fun getService(): AdaptiveHybridService = this@AdaptiveHybridService
+        fun getService(): SoloConversationService = this@SoloConversationService
     }
 
     override fun onBind(intent: Intent): IBinder {
@@ -142,15 +142,15 @@ class AdaptiveHybridService : VoiceTranslationService() {
         val config = HybridConfig(
             first.language,
             second.language,
-            readDirectionMode(prefs, "adaptiveHybridFirstToSecondMode"),
-            readDirectionMode(prefs, "adaptiveHybridSecondToFirstMode"),
+            readDirectionMode(prefs, "soloConversationFirstToSecondMode"),
+            readDirectionMode(prefs, "soloConversationSecondToFirstMode"),
         )
         val session = HybridSession(config)
         session.setListener(object : TranslationListener {
             override fun onTranslatedText(direction: Direction, text: String) {
                 val targetLanguageCode = config.targetLanguage(direction)
                 val targetLocale = if (direction == Direction.FIRST_TO_SECOND) second else first
-                val utteranceId = "adaptiveHybrid-${System.currentTimeMillis()}"
+                val utteranceId = "soloConversation-${System.currentTimeMillis()}"
                 utteranceDirections[utteranceId] = direction
                 // targetLocale's language should already match targetLanguageCode; kept
                 // as a CustomLocale (not just the code) because speak()/TTS need the full
@@ -163,7 +163,7 @@ class AdaptiveHybridService : VoiceTranslationService() {
                 // §7's field-instrumentation hook -- logged for now rather than
                 // surfaced in a UI, since building a log-file/export flow for this was
                 // out of scope for getting the mode reachable at all. See
-                // docs/adaptive-hybrid-mode-design.md §7.
+                // docs/solo-conversation-mode-design.md §7.
                 Log.d(TAG, "debug event: direction=$direction event=$event elapsedMs=$elapsedMs")
             }
         })
@@ -180,10 +180,10 @@ class AdaptiveHybridService : VoiceTranslationService() {
         }
     }
 
-    /** Called by [AdaptiveHybridFragment] when the user changes a direction's mode. */
+    /** Called by [SoloConversationFragment] when the user changes a direction's mode. */
     fun setDirectionMode(direction: Direction, mode: DirectionMode) {
         hybridSession?.setMode(direction, mode)
-        val key = if (direction == Direction.FIRST_TO_SECOND) "adaptiveHybridFirstToSecondMode" else "adaptiveHybridSecondToFirstMode"
+        val key = if (direction == Direction.FIRST_TO_SECOND) "soloConversationFirstToSecondMode" else "soloConversationSecondToFirstMode"
         getSharedPreferences("default", Context.MODE_PRIVATE).edit()
             .putString(key, mode.name)
             .apply()
@@ -252,7 +252,7 @@ class AdaptiveHybridService : VoiceTranslationService() {
 
         // Echo-safety (docs/echo-safety-analysis.md): RTranslator has never used AEC
         // before this mode, since WalkieTalkie/Conversation always output to the phone
-        // speaker or deactivate the mic during their own TTS. Adaptive Hybrid Mode is the
+        // speaker or deactivate the mic during their own TTS. Solo Conversation mode is the
         // first path in this app that needs it. isAvailable() is device/OEM-dependent --
         // per CLAUDE.md this specifically needs confirming on the Pixel 9 Pro XL, not
         // something verifiable in this sandbox.
@@ -291,7 +291,7 @@ class AdaptiveHybridService : VoiceTranslationService() {
                     Log.w(TAG, "pushAudioChunk failed: ${e.message}")
                 }
             }
-        }, "AdaptiveHybridCapture")
+        }, "SoloConversationCapture")
         captureThread = thread
         thread.start()
     }

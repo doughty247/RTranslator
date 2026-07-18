@@ -9,7 +9,7 @@ app/.cxx
 app/release
 
 # Rust
-/adaptive-hybrid-core/target
+/solo-conversation-core/target
 
 # Vendored native/AAR dependencies fetched per app/libs/README.md -- not committed,
 # same reasoning as the Whisper/NLLB .onnx files (large binary, fetched at build/setup

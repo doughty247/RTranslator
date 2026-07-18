@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package nie.translator.rtranslator.voice_translation._adaptive_hybrid_mode
+package nie.translator.rtranslator.voice_translation._solo_conversation_mode
 
 import android.content.ComponentName
 import android.content.Context
@@ -32,13 +32,13 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import nie.translator.rtranslator.R
 import nie.translator.rtranslator.voice_translation.VoiceTranslationActivity
-import uniffi.adaptive_hybrid_core.Direction
-import uniffi.adaptive_hybrid_core.DirectionMode
+import uniffi.solo_conversation_core.Direction
+import uniffi.solo_conversation_core.DirectionMode
 
 /**
- * Adaptive Hybrid Mode's fragment -- the "one phone, no second device needed" conversation
+ * Solo Conversation mode's fragment -- the "one phone, no second device needed" conversation
  * UI this branch's work has been building toward (see
- * docs/adaptive-hybrid-mode-changelog.md). Binds to [AdaptiveHybridService] and exposes
+ * docs/solo-conversation-mode-changelog.md). Binds to [SoloConversationService] and exposes
  * per-direction Live/PushToTalk/Off controls.
  * <p>
  * Deliberately a minimal, code-built layout (matching
@@ -50,15 +50,15 @@ import uniffi.adaptive_hybrid_core.DirectionMode
  * display, etc.) is follow-up work.
  * <p>
  * <b>Unverified in this development environment</b> -- see
- * `AdaptiveHybridService`'s class doc.
+ * `SoloConversationService`'s class doc.
  */
-class AdaptiveHybridFragment : Fragment() {
-    private var service: AdaptiveHybridService? = null
+class SoloConversationFragment : Fragment() {
+    private var service: SoloConversationService? = null
     private var bound = false
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName, binder: IBinder) {
-            service = (binder as AdaptiveHybridService.LocalBinder).getService()
+            service = (binder as SoloConversationService.LocalBinder).getService()
             bound = true
         }
 
@@ -75,11 +75,11 @@ class AdaptiveHybridFragment : Fragment() {
         val padding = (16 * resources.displayMetrics.density).toInt()
         root.setPadding(padding, padding, padding, padding)
 
-        root.addView(buildDirectionControls(context, Direction.FIRST_TO_SECOND, getString(R.string.adaptive_hybrid_direction_first_to_second)))
-        root.addView(buildDirectionControls(context, Direction.SECOND_TO_FIRST, getString(R.string.adaptive_hybrid_direction_second_to_first)))
+        root.addView(buildDirectionControls(context, Direction.FIRST_TO_SECOND, getString(R.string.solo_conversation_direction_first_to_second)))
+        root.addView(buildDirectionControls(context, Direction.SECOND_TO_FIRST, getString(R.string.solo_conversation_direction_second_to_first)))
 
         val backButton = Button(context)
-        backButton.text = getString(R.string.adaptive_hybrid_back_to_translation)
+        backButton.text = getString(R.string.solo_conversation_back_to_translation)
         backButton.setOnClickListener {
             (requireActivity() as? VoiceTranslationActivity)?.setFragment(VoiceTranslationActivity.TRANSLATION_FRAGMENT)
         }
@@ -103,15 +103,15 @@ class AdaptiveHybridFragment : Fragment() {
         modeRow.orientation = LinearLayout.HORIZONTAL
 
         val liveButton = Button(context)
-        liveButton.text = getString(R.string.adaptive_hybrid_mode_live)
+        liveButton.text = getString(R.string.solo_conversation_mode_live)
         liveButton.setOnClickListener { service?.setDirectionMode(direction, DirectionMode.LIVE) }
 
         val pttButton = Button(context)
-        pttButton.text = getString(R.string.adaptive_hybrid_mode_push_to_talk)
+        pttButton.text = getString(R.string.solo_conversation_mode_push_to_talk)
         pttButton.setOnClickListener { service?.setDirectionMode(direction, DirectionMode.PUSH_TO_TALK) }
 
         val offButton = Button(context)
-        offButton.text = getString(R.string.adaptive_hybrid_mode_off)
+        offButton.text = getString(R.string.solo_conversation_mode_off)
         offButton.setOnClickListener { service?.setDirectionMode(direction, DirectionMode.OFF) }
 
         modeRow.addView(liveButton)
@@ -125,7 +125,7 @@ class AdaptiveHybridFragment : Fragment() {
         // fire-and-forget calls into the service with no confirmation callback wired back
         // to this fragment yet (see class doc -- this is a minimal first pass).
         val pushToTalkHoldButton = Button(context)
-        pushToTalkHoldButton.text = getString(R.string.adaptive_hybrid_hold_to_talk)
+        pushToTalkHoldButton.text = getString(R.string.solo_conversation_hold_to_talk)
         pushToTalkHoldButton.setOnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> service?.beginPushToTalk(direction)
@@ -141,8 +141,8 @@ class AdaptiveHybridFragment : Fragment() {
     override fun onStart() {
         super.onStart()
         val activity = requireActivity() as VoiceTranslationActivity
-        activity.startAdaptiveHybridService()
-        activity.bindService(Intent(activity, AdaptiveHybridService::class.java), connection, Context.BIND_ABOVE_CLIENT)
+        activity.startSoloConversationService()
+        activity.bindService(Intent(activity, SoloConversationService::class.java), connection, Context.BIND_ABOVE_CLIENT)
     }
 
     override fun onStop() {

@@ -2,9 +2,9 @@
 
 buildscript {
     // Added for the neural TTS integration (sherpa-onnx's Android API is Kotlin) and the
-    // adaptive-hybrid-core UniFFI Kotlin bindings -- this app was pure Java before that.
+    // solo-conversation-core UniFFI Kotlin bindings -- this app was pure Java before that.
     // Not verified to build in this environment (no Android SDK/NDK here, see
-    // docs/adaptive-hybrid-mode-changelog.md); picked for AGP 8.2.2 / Gradle 8.12
+    // docs/solo-conversation-mode-changelog.md); picked for AGP 8.2.2 / Gradle 8.12
     // compatibility, confirm on a real build.
     ext.kotlin_version = '1.9.22'
 

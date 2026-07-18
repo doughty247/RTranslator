@@ -191,19 +191,19 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             }
         });
 
-        // link to Adaptive Hybrid Mode -- there's no dedicated mode-picker screen this
-        // app's UI (see docs/adaptive-hybrid-mode-changelog.md for why Settings was
+        // link to Solo Conversation mode -- there's no dedicated mode-picker screen this
+        // app's UI (see docs/solo-conversation-mode-changelog.md for why Settings was
         // chosen: TranslationFragment's two entry buttons are tightly coupled to a
         // custom animation system this pass didn't want to risk modifying blind), so
         // reuse VoiceTranslationActivity's own "fragment" SharedPreferences key -- the
         // same mechanism VoiceTranslationActivity.onStart() already uses to restore
         // whichever mode was last active.
-        Preference adaptiveHybridModePreference = findPreference("adaptiveHybridMode");
-        adaptiveHybridModePreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+        Preference soloConversationModePreference = findPreference("soloConversationMode");
+        soloConversationModePreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
             @Override
             public boolean onPreferenceClick(Preference preference) {
                 global.getSharedPreferences("default", Context.MODE_PRIVATE).edit()
-                        .putInt("fragment", nie.translator.rtranslator.voice_translation.VoiceTranslationActivity.ADAPTIVE_HYBRID_FRAGMENT)
+                        .putInt("fragment", nie.translator.rtranslator.voice_translation.VoiceTranslationActivity.SOLO_CONVERSATION_FRAGMENT)
                         .apply();
                 Intent intent = new Intent(activity, nie.translator.rtranslator.voice_translation.VoiceTranslationActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

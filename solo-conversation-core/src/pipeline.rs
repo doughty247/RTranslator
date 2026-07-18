@@ -1,5 +1,5 @@
 //! Live-direction and push-to-talk-direction state machines
-//! (`docs/adaptive-hybrid-mode-design.md` §2, Option A: two independent
+//! (`docs/solo-conversation-mode-design.md` §2, Option A: two independent
 //! per-direction loops with Rust-side audio fan-out, rather than a single
 //! shared loop). Also implements §6's sticky-language-bias tiebreak, folded
 //! in here per that section's note that it "lives inside the disambiguation
@@ -154,7 +154,7 @@ impl PipelineManager {
     /// first cut, revisit if losing that pre-roll hurts ASR accuracy), and
     /// any `PushToTalk` direction currently between `begin_push_to_talk` and
     /// `end_push_to_talk`. `Off` directions are skipped entirely, not just
-    /// muted after the fact (`docs/adaptive-hybrid-mode-design.md` §1a).
+    /// muted after the fact (`docs/solo-conversation-mode-design.md` §1a).
     pub fn process_chunk(
         &mut self,
         config: &HybridConfig,

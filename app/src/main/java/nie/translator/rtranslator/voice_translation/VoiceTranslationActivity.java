@@ -65,8 +65,8 @@ import nie.translator.rtranslator.bluetooth.Peer;
 import nie.translator.rtranslator.voice_translation._text_translation.TranslationFragment;
 import nie.translator.rtranslator.voice_translation._walkie_talkie_mode._walkie_talkie.WalkieTalkieFragment;
 import nie.translator.rtranslator.voice_translation._walkie_talkie_mode._walkie_talkie.WalkieTalkieService;
-import nie.translator.rtranslator.voice_translation._adaptive_hybrid_mode.AdaptiveHybridFragment;
-import nie.translator.rtranslator.voice_translation._adaptive_hybrid_mode.AdaptiveHybridService;
+import nie.translator.rtranslator.voice_translation._solo_conversation_mode.SoloConversationFragment;
+import nie.translator.rtranslator.voice_translation._solo_conversation_mode.SoloConversationService;
 
 
 public class VoiceTranslationActivity extends GeneralActivity {
@@ -78,7 +78,7 @@ public class VoiceTranslationActivity extends GeneralActivity {
     public static final int CONVERSATION_FRAGMENT = 1;
     public static final int WALKIE_TALKIE_FRAGMENT = 2;
     public static final int TRANSLATION_FRAGMENT = 3;
-    public static final int ADAPTIVE_HYBRID_FRAGMENT = 4;
+    public static final int SOLO_CONVERSATION_FRAGMENT = 4;
     public static final int DEFAULT_FRAGMENT = TRANSLATION_FRAGMENT;
     public static final int NO_PERMISSIONS = -10;
     private static final int REQUEST_CODE_REQUIRED_PERMISSIONS = 2;
@@ -180,7 +180,7 @@ public class VoiceTranslationActivity extends GeneralActivity {
                 // possible stop of the Conversation and WalkieTalkie Service
                 stopConversationService();
                 stopWalkieTalkieService();
-                stopAdaptiveHybridService();
+                stopSoloConversationService();
                 // possible setting of the fragment
                 if (getCurrentFragment() != PAIRING_FRAGMENT) {
                     if (Tools.hasPermissions(this, REQUIRED_PERMISSIONS)) {
@@ -248,7 +248,7 @@ public class VoiceTranslationActivity extends GeneralActivity {
                 // possible stop of the Conversation and WalkieTalkie Service
                 stopConversationService();
                 stopWalkieTalkieService();
-                stopAdaptiveHybridService();
+                stopSoloConversationService();
                 // possible setting of the fragment
                 if (getCurrentFragment() != TRANSLATION_FRAGMENT) {
                     TranslationFragment translationFragment = new TranslationFragment();
@@ -264,19 +264,20 @@ public class VoiceTranslationActivity extends GeneralActivity {
                 }
                 break;
             }
-            case ADAPTIVE_HYBRID_FRAGMENT: {
-                // possible stop of the Conversation and WalkieTalkie Service (Adaptive
-                // Hybrid Mode's own service is started/stopped by AdaptiveHybridFragment
-                // itself via bindService, not here -- see that class's onStart/onStop)
+            case SOLO_CONVERSATION_FRAGMENT: {
+                // possible stop of the Conversation and WalkieTalkie Service (Solo
+                // Conversation mode's own service is started/stopped by
+                // SoloConversationFragment itself via bindService, not here -- see that
+                // class's onStart/onStop)
                 stopConversationService();
                 stopWalkieTalkieService();
-                if (getCurrentFragment() != ADAPTIVE_HYBRID_FRAGMENT) {
-                    AdaptiveHybridFragment adaptiveHybridFragment = new AdaptiveHybridFragment();
+                if (getCurrentFragment() != SOLO_CONVERSATION_FRAGMENT) {
+                    SoloConversationFragment soloConversationFragment = new SoloConversationFragment();
                     FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
                     transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
-                    transaction.replace(R.id.fragment_container, adaptiveHybridFragment);
+                    transaction.replace(R.id.fragment_container, soloConversationFragment);
                     transaction.commit();
-                    currentFragment = ADAPTIVE_HYBRID_FRAGMENT;
+                    currentFragment = SOLO_CONVERSATION_FRAGMENT;
                     saveFragment();
                 }
                 break;
@@ -316,8 +317,8 @@ public class VoiceTranslationActivity extends GeneralActivity {
                 if (currentFragment.getClass().equals(TranslationFragment.class)) {
                     return TRANSLATION_FRAGMENT;
                 }
-                if (currentFragment.getClass().equals(AdaptiveHybridFragment.class)) {
-                    return ADAPTIVE_HYBRID_FRAGMENT;
+                if (currentFragment.getClass().equals(SoloConversationFragment.class)) {
+                    return SOLO_CONVERSATION_FRAGMENT;
                 }
             }
         }
@@ -636,21 +637,21 @@ public class VoiceTranslationActivity extends GeneralActivity {
 
     /**
      * Unlike {@link #startWalkieTalkieService} / {@link #startConversationService},
-     * takes no language extras -- {@code AdaptiveHybridService.onCreate()} reads the
+     * takes no language extras -- {@code SoloConversationService.onCreate()} reads the
      * configured languages from {@link Global} directly, since {@code HybridConfig}
      * (the Rust side) needs them before any UI is necessarily attached, not just at
      * service-start time.
      */
-    public void startAdaptiveHybridService() {
-        Intent intent = new Intent(this, AdaptiveHybridService.class);
+    public void startSoloConversationService() {
+        Intent intent = new Intent(this, SoloConversationService.class);
         if (NotificationManagerCompat.from(this).areNotificationsEnabled()) {
-            intent.putExtra("notification", buildNotification(ADAPTIVE_HYBRID_FRAGMENT));
+            intent.putExtra("notification", buildNotification(SOLO_CONVERSATION_FRAGMENT));
         }
         startService(intent);
     }
 
-    public void stopAdaptiveHybridService() {
-        stopService(new Intent(this, AdaptiveHybridService.class));
+    public void stopSoloConversationService() {
+        stopService(new Intent(this, SoloConversationService.class));
     }
 
     //notification
@@ -671,9 +672,9 @@ public class VoiceTranslationActivity extends GeneralActivity {
                     .setOngoing(true)
                     .setChannelId(channelID)
                     .build();
-        } else if (clickAction == ADAPTIVE_HYBRID_FRAGMENT) {
-            builder.setContentTitle(getString(R.string.title_fragment_adaptive_hybrid))
-                    .setContentText(getString(R.string.adaptive_hybrid_mode_running))
+        } else if (clickAction == SOLO_CONVERSATION_FRAGMENT) {
+            builder.setContentTitle(getString(R.string.title_fragment_solo_conversation))
+                    .setContentText(getString(R.string.solo_conversation_mode_running))
                     .setContentIntent(resultPendingIntent)
                     .setSmallIcon(R.drawable.mic_icon)
                     .setOngoing(true)

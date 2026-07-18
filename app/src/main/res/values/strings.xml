@@ -103,10 +103,10 @@
 
     <string name="home_walkietalkie_mode">WalkieTalkie Mode</string>
     <string name="home_conversation_mode">Conversation Mode</string>
-    <string name="home_adaptive_hybrid_mode">Adaptive Hybrid Mode (beta)</string>
+    <string name="home_solo_conversation_mode">Solo Conversation mode (beta)</string>
     <string name="title_fragment_conversation">Conversation</string>
     <string name="title_fragment_walkie_talkie">WalkieTalkie</string>
-    <string name="title_fragment_adaptive_hybrid">Adaptive Hybrid Mode</string>
+    <string name="title_fragment_solo_conversation">Solo Conversation mode</string>
     <string name="title_fragment_notice">Notice</string>
     <string name="title_fragment_user_data">Insert your data</string>
     <string name="title_fragment_download">Download of models</string>
@@ -160,7 +160,7 @@
     <string name="preference_description_neural_tts">Use a more natural-sounding on-device voice instead of the system text-to-speech, for languages you\'ve downloaded a voice for. Needs a downloaded voice model per language (see below) and enough device RAM.</string>
     <string name="preference_description_neural_tts_ram_ineligible">Not available on this device -- higher quality voices need more RAM than this device has.</string>
     <string name="preference_description_download_neural_tts_voices">Download optional higher quality voice models for the languages you use most</string>
-    <string name="preference_description_adaptive_hybrid_mode">One-phone ambient conversation mode -- each language direction independently set to always-listening or push-to-talk</string>
+    <string name="preference_description_solo_conversation_mode">One-phone ambient conversation mode -- each language direction independently set to always-listening or push-to-talk</string>
 
     <string name="voice_download_action_download">Download</string>
     <string name="voice_download_status_downloading">Downloading…</string>
@@ -173,14 +173,14 @@
     <string name="conversation_mode_running" >Conversation mode is running...</string>
     <string name="walkietalkie_mode" >WalkieTalkie</string>
     <string name="walkietalkie_mode_running" >WalkieTalkie mode is running...</string>
-    <string name="adaptive_hybrid_mode_running">Adaptive Hybrid Mode is running...</string>
+    <string name="solo_conversation_mode_running">Solo Conversation mode is running...</string>
 
-    <string name="adaptive_hybrid_direction_first_to_second">Direction: first → second language</string>
-    <string name="adaptive_hybrid_direction_second_to_first">Direction: second → first language</string>
-    <string name="adaptive_hybrid_mode_live">Live</string>
-    <string name="adaptive_hybrid_mode_push_to_talk">Push-to-talk</string>
-    <string name="adaptive_hybrid_mode_off">Off</string>
-    <string name="adaptive_hybrid_hold_to_talk">Hold to talk</string>
-    <string name="adaptive_hybrid_back_to_translation">Back</string>
+    <string name="solo_conversation_direction_first_to_second">Direction: first → second language</string>
+    <string name="solo_conversation_direction_second_to_first">Direction: second → first language</string>
+    <string name="solo_conversation_mode_live">Live</string>
+    <string name="solo_conversation_mode_push_to_talk">Push-to-talk</string>
+    <string name="solo_conversation_mode_off">Off</string>
+    <string name="solo_conversation_hold_to_talk">Hold to talk</string>
+    <string name="solo_conversation_back_to_translation">Back</string>
 
 </resources>

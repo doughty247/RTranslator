@@ -178,8 +178,8 @@ public abstract class VoiceTranslationService extends GeneralService {
      * different echo-safety needs than {@link #shouldDeactivateMicDuringTTS}'s blunt
      * "always stop the mic during TTS" can hook in without altering this shared method
      * (WalkieTalkie/Conversation both rely on the existing behavior unchanged).
-     * AdaptiveHybridService uses these to call the Rust pipeline's
-     * notify_playback_window signal (docs/adaptive-hybrid-mode-design.md §4) around TTS
+     * SoloConversationService uses these to call the Rust pipeline's
+     * notify_playback_window signal (docs/solo-conversation-mode-design.md §4) around TTS
      * playback, since its mic gating is VAD-based in Rust rather than an on/off switch
      * here.
      */

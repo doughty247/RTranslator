@@ -6,22 +6,22 @@ a sandbox without Android SDK/NDK: it runs against the *same* generated
 extern "C" scaffolding that Kotlin/Java bindings would call through (UniFFI
 generates one Rust-side FFI layer shared by every language target), just
 driven from Python instead. It is not a substitute for an actual on-device
-Kotlin/Java smoke test — see adaptive-hybrid-core/README.md.
+Kotlin/Java smoke test — see solo-conversation-core/README.md.
 
-Covers the post-sign-off surface from docs/adaptive-hybrid-mode-design.md:
+Covers the post-sign-off surface from docs/solo-conversation-mode-design.md:
 undirected push_audio_chunk with Rust-side fan-out (§2/§3), the
 notify_playback_window echo-safety signal (§4), push-to-talk bracketing, and
 the optional debug callback (§7) — on top of what Phase 2 already verified
 (session lifecycle, config get/set, Off mode).
 
-Run via adaptive-hybrid-core/tests/run_ffi_roundtrip.sh, which generates the
+Run via solo-conversation-core/tests/run_ffi_roundtrip.sh, which generates the
 bindings this script imports before invoking it.
 """
 import sys
 
 sys.path.insert(0, "target/bindings/python")
 
-import adaptive_hybrid_core as core  # noqa: E402
+import solo_conversation_core as core  # noqa: E402
 
 
 class RecordingListener(core.TranslationListener):

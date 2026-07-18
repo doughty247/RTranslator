@@ -1,5 +1,5 @@
 //! The UniFFI-exposed surface, now wired to the real §2/§4/§5/§6/§7
-//! architecture from `docs/adaptive-hybrid-mode-design.md` once the
+//! architecture from `docs/solo-conversation-mode-design.md` once the
 //! developer signed off on it. Kept intentionally minimal per `CLAUDE.md`
 //! ("a small, stable UniFFI interface is what makes this portable later"):
 //! session start/stop, push an undirected audio chunk (§3 — Rust does the
@@ -48,7 +48,7 @@ struct SessionState {
     running: bool,
 }
 
-/// One Adaptive Hybrid Mode session: owns the config and the per-direction
+/// One Solo Conversation mode session: owns the config and the per-direction
 /// pipeline state (`PipelineManager` — §2's two independent loops, §4's echo
 /// gating, §5/§6's disambiguation).
 #[derive(uniffi::Object)]

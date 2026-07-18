@@ -46,7 +46,7 @@ import com.k2fsa.sherpa.onnx.OfflineTtsConfig;
  * TextToSpeech.QUEUE_ADD}'s behavior) and plays the result via {@link AudioTrack}.
  * <p>
  * <b>Unverified in this development environment</b> (see
- * docs/adaptive-hybrid-mode-changelog.md): no Android SDK/NDK here to compile against,
+ * docs/solo-conversation-mode-changelog.md): no Android SDK/NDK here to compile against,
  * and the actual sherpa-onnx {@code .aar}/native library isn't vendored in this repo (see
  * app/libs/README.md) -- this class is written directly against sherpa-onnx's documented
  * Kotlin API (confirmed via a shallow clone of the upstream repo during development, not

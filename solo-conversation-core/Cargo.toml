@@ -1,8 +1,8 @@
 [package]
-name = "adaptive-hybrid-core"
+name = "solo-conversation-core"
 version = "0.1.0"
 edition = "2021"
-description = "Adaptive Hybrid Mode: per-direction live/push-to-talk speech translation pipeline for RTranslator, callable via UniFFI."
+description = "Solo Conversation mode: per-direction live/push-to-talk speech translation pipeline for RTranslator, callable via UniFFI."
 license = "Apache-2.0"
 
 [lib]

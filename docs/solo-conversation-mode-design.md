@@ -1,11 +1,11 @@
-# Adaptive Hybrid Mode — Design Doc (Phase 3, SIGNED OFF)
+# Solo Conversation mode — Design Doc (Phase 3, SIGNED OFF)
 
 **Status: DECIDED. All six open questions below were resolved by the developer and are
 now implemented** in `config.rs`, `vad.rs`, `langid.rs`, `pipeline.rs`, and `ffi.rs`. Each
 section below is left in its original options-and-tradeoffs form (that record has value —
 it's why each choice was made) with the actual decision called out at the top of the
 section. See each module's own doc comments for how the decision maps to code, and
-`adaptive-hybrid-core/README.md`'s status section for what's implemented vs. still stubbed
+`solo-conversation-core/README.md`'s status section for what's implemented vs. still stubbed
 (real ASR/MT inference — blocked on real model weights this sandbox doesn't have, not on
 any remaining design question).
 
@@ -71,8 +71,8 @@ capture stream exists. Two sub-questions:
 
 **(a) How does incoming audio get attributed to a direction before ASR runs?**
 Unlike WalkieTalkie (which always runs *both* languages' forced-decode and picks a winner
-after the fact, per the research into `WalkieTalkieService.compareResults()`), Adaptive
-Hybrid Mode's two directions may be in different modes simultaneously — e.g. direction A
+after the fact, per the research into `WalkieTalkieService.compareResults()`), Solo
+Conversation mode's two directions may be in different modes simultaneously — e.g. direction A
 live (always listening) while direction B is push-to-talk (only listening while the
 button is held). This is actually simpler than WalkieTalkie's problem in the mixed-mode
 case, because push-to-talk's button press *is* the attribution signal — no language ID
@@ -261,7 +261,7 @@ well-tested, already-integrated dependency.
 
 **Tradeoff:** `CLAUDE.md` notes upstream RTranslator 3.0 plans to remove MLKit entirely,
 and it's closed-source, which cuts against the open-source-extraction goal for a
-standalone crate — anyone depending on `adaptive-hybrid-core` outside an MLKit-having
+standalone crate — anyone depending on `solo-conversation-core` outside an MLKit-having
 Android app would need to supply their own language ID. Acceptable as a Phase 4 shortcut
 specifically because §2 narrowed the requirement to one case (both-Live), not the
 default path every utterance takes.
@@ -290,7 +290,7 @@ since real ASR confidence distributions aren't available in this sandbox.
 **The vision:** §2 narrowed language disambiguation down to one case — both directions
 Live simultaneously — but within that case, the plan so far (§2 + §5) is a direct port of
 WalkieTalkie's approach: every utterance is judged from scratch, with no memory of what
-came before. That's a missed opportunity specific to what makes Adaptive Hybrid Mode
+came before. That's a missed opportunity specific to what makes Solo Conversation mode
 different from WalkieTalkie in the first place. WalkieTalkie is turn-based and
 short-lived — a stateless per-utterance guess is a reasonable fit for it. Ambient mode is
 explicitly meant to run for an extended, continuous conversation, and real conversations

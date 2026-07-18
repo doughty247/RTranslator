@@ -1,6 +1,6 @@
 //! Voice-activity gating for the live/ambient direction, including
 //! echo-safety coordination with TTS playback
-//! (`docs/adaptive-hybrid-mode-design.md` §4).
+//! (`docs/solo-conversation-mode-design.md` §4).
 //!
 //! §4 asked to choose between a hard mute window (Option A: simple, safe,
 //! reintroduces some listen-then-speak latency) and a sensitivity adjustment
@@ -127,7 +127,7 @@ impl VadGate {
     }
 
     /// Java calls this around every `TextToSpeech` start/done callback for a
-    /// Live direction (`docs/adaptive-hybrid-mode-design.md` §4's
+    /// Live direction (`docs/solo-conversation-mode-design.md` §4's
     /// `notify_playback_window`). Starting playback mutes immediately and
     /// unconditionally; stopping playback arms the Muted-then-Elevated
     /// window from the current elapsed time.

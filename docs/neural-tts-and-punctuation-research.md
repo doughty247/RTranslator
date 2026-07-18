@@ -1,7 +1,7 @@
 # Neural TTS, RAM Gating, and Punctuation — Research Notes
 
 Research backing the on-device neural TTS feature and the punctuation investigation
-requested after the Adaptive Hybrid Mode work. Covers what was found and why it points at
+requested after the Solo Conversation mode work. Covers what was found and why it points at
 `sherpa-onnx` specifically, plus a real (not speculative) answer to the punctuation
 question that emerged from that same research.
 

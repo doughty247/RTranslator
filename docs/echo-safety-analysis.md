@@ -28,7 +28,7 @@ always outputs to the phone's own speaker, at a volume and physical position whe
 during playback" is sufficient — there's no scenario where the user needs to hear something
 else *while* the phone is talking.
 
-## Why Adaptive Hybrid Mode can't reuse this
+## Why Solo Conversation mode can't reuse this
 
 The live/ambient direction's entire premise breaks the assumption above: TTS output goes to
 **Bluetooth headphones the mic may also be near or share signal path with** (depending on
@@ -67,7 +67,7 @@ latency in a mode explicitly meant to feel ambient.
 
 ## Bottom line for Phase 3
 
-Echo-safety in Adaptive Hybrid Mode is **not** a solved problem being ported from
+Echo-safety in Solo Conversation mode is **not** a solved problem being ported from
 WalkieTalkie — it's new work that must combine (a) Java-side `AcousticEchoCanceler` on the
 capture session, (b) a Java→Rust playback-window signal so VAD gating cooperates with it,
 and (c) empirical tuning against real Bluetooth hardware that can only happen on-device.

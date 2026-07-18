@@ -1,5 +1,5 @@
 //! Rust-native language identification for the both-Live disambiguation case
-//! (`docs/adaptive-hybrid-mode-design.md` §5, Option B — chosen over reusing
+//! (`docs/solo-conversation-mode-design.md` §5, Option B — chosen over reusing
 //! Java's MLKit call specifically to keep the crate free of an Android/Java
 //! dependency for its standalone-extraction goal).
 //!

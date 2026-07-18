@@ -16,12 +16,12 @@
 //! extracted from the app's existing native libs) to actually exercise
 //! model loading end to end.
 
-use adaptive_hybrid_core::asr::WhisperModel;
-use adaptive_hybrid_core::mt::NllbModel;
+use solo_conversation_core::asr::WhisperModel;
+use solo_conversation_core::mt::NllbModel;
 
 #[test]
 fn whisper_load_reports_missing_onnxruntime_instead_of_hanging() {
-    let missing_dir = std::path::Path::new("/nonexistent/adaptive-hybrid-core-test");
+    let missing_dir = std::path::Path::new("/nonexistent/solo-conversation-core-test");
     let err = match WhisperModel::load(missing_dir, Some("/nonexistent/libonnxruntime.so")) {
         Ok(_) => panic!("no onnxruntime dylib exists at this path, load should have failed"),
         Err(e) => e,
@@ -31,7 +31,7 @@ fn whisper_load_reports_missing_onnxruntime_instead_of_hanging() {
 
 #[test]
 fn nllb_load_reports_missing_onnxruntime_instead_of_hanging() {
-    let missing_dir = std::path::Path::new("/nonexistent/adaptive-hybrid-core-test");
+    let missing_dir = std::path::Path::new("/nonexistent/solo-conversation-core-test");
     let err = match NllbModel::load(missing_dir, None) {
         Ok(_) => panic!("ORT_DYLIB_PATH is not set, load should have failed"),
         Err(e) => e,

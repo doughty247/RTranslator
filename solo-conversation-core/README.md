@@ -1,6 +1,6 @@
-# adaptive-hybrid-core
+# solo-conversation-core
 
-The Rust core of RTranslator's Adaptive Hybrid Mode: per-direction, independently
+The Rust core of RTranslator's Solo Conversation mode: per-direction, independently
 switchable **live/ambient** (continuous VAD-gated listening) or **push-to-talk**
 (button-triggered) speech translation, exposed to the app's Java/Kotlin shell via
 [UniFFI](https://mozilla.github.io/uniffi-rs/).
@@ -13,7 +13,7 @@ wrappers and has no other Java-side dependency.
 
 ## Status
 
-The Phase 3 design doc (`../docs/adaptive-hybrid-mode-design.md`) is **signed off** — all
+The Phase 3 design doc (`../docs/solo-conversation-mode-design.md`) is **signed off** — all
 six open questions were decided by the developer and are implemented below. What's left is
 Phase 5's real ASR/MT inference, not a design question. What's here:
 
@@ -46,7 +46,7 @@ Phase 5's real ASR/MT inference, not a design question. What's here:
 
 ## Why no `.udl` file
 
-`CLAUDE.md`'s original repo sketch listed `adaptive-hybrid-core.udl`. This crate instead
+`CLAUDE.md`'s original repo sketch listed `solo-conversation-core.udl`. This crate instead
 uses UniFFI's newer proc-macro API (`#[uniffi::export]`, `uniffi::setup_scaffolding!()`),
 which is now the documented preferred approach and needs no separate interface-definition
 file — the Rust source is the single source of truth for the FFI surface. Noting the
@@ -61,16 +61,16 @@ bash tests/run_ffi_roundtrip.sh    # builds the cdylib, generates Python binding
 ```
 
 Regenerate the Kotlin bindings committed under `bindings/kotlin/` (copied into
-`app/src/main/java/uniffi/adaptive_hybrid_core/` for the app to actually use — that copy
+`app/src/main/java/uniffi/solo_conversation_core/` for the app to actually use — that copy
 needs to be refreshed by hand after regenerating, this crate doesn't symlink or build
 against the app module) with:
 
 ```sh
 cargo build --lib
-cargo run --bin uniffi-bindgen -- generate --library target/debug/libadaptive_hybrid_core.so \
+cargo run --bin uniffi-bindgen -- generate --library target/debug/libsolo_conversation_core.so \
     --language kotlin --out-dir bindings/kotlin
-cp bindings/kotlin/uniffi/adaptive_hybrid_core/adaptive_hybrid_core.kt \
-    ../app/src/main/java/uniffi/adaptive_hybrid_core/adaptive_hybrid_core.kt
+cp bindings/kotlin/uniffi/solo_conversation_core/solo_conversation_core.kt \
+    ../app/src/main/java/uniffi/solo_conversation_core/solo_conversation_core.kt
 ```
 
 ### Building the Android native library
@@ -85,9 +85,9 @@ rustup target add aarch64-linux-android   # one-time
 cargo ndk -t arm64-v8a -o ../app/src/main/jniLibs build --release
 ```
 
-This should produce `../app/src/main/jniLibs/arm64-v8a/libadaptive_hybrid_core.so` — the
-generated Kotlin bindings load it via JNA (`Native.load("adaptive_hybrid_core", ...)`,
-see `adaptive_hybrid_core.kt`'s `findLibraryName`), which resolves the `lib`/`.so`
+This should produce `../app/src/main/jniLibs/arm64-v8a/libsolo_conversation_core.so` — the
+generated Kotlin bindings load it via JNA (`Native.load("solo_conversation_core", ...)`,
+see `solo_conversation_core.kt`'s `findLibraryName`), which resolves the `lib`/`.so`
 naming convention automatically from that `jniLibs/<abi>/` layout, the same convention
 Android's own `System.loadLibrary` uses. `ORT_DYLIB_PATH` (see the `ort` linking section
 below) also needs to be set to wherever the app's existing ONNX Runtime `.so` lands at

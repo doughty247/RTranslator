@@ -3,7 +3,7 @@
 
 @file:Suppress("NAME_SHADOWING")
 
-package uniffi.adaptive_hybrid_core
+package uniffi.solo_conversation_core
 
 // Common helper code.
 //
@@ -59,7 +59,7 @@ open class RustBuffer : Structure() {
     companion object {
         internal fun alloc(size: ULong = 0UL) = uniffiRustCall() { status ->
             // Note: need to convert the size to a `Long` value to make this work with JVM.
-            UniffiLib.INSTANCE.ffi_adaptive_hybrid_core_rustbuffer_alloc(size.toLong(), status)
+            UniffiLib.INSTANCE.ffi_solo_conversation_core_rustbuffer_alloc(size.toLong(), status)
         }.also {
             if(it.data == null) {
                throw RuntimeException("RustBuffer.alloc() returned null data pointer (size=${size})")
@@ -75,7 +75,7 @@ open class RustBuffer : Structure() {
         }
 
         internal fun free(buf: RustBuffer.ByValue) = uniffiRustCall() { status ->
-            UniffiLib.INSTANCE.ffi_adaptive_hybrid_core_rustbuffer_free(buf, status)
+            UniffiLib.INSTANCE.ffi_solo_conversation_core_rustbuffer_free(buf, status)
         }
     }
 
@@ -375,7 +375,7 @@ private fun findLibraryName(componentName: String): String {
     if (libOverride != null) {
         return libOverride
     }
-    return "adaptive_hybrid_core"
+    return "solo_conversation_core"
 }
 
 private inline fun <reified Lib : Library> loadIndirect(
@@ -813,45 +813,45 @@ internal open class UniffiVTableCallbackInterfaceTranslationListener(
 // when the library is loaded.
 internal interface IntegrityCheckingUniffiLib : Library {
     // Integrity check functions only
-    fun uniffi_adaptive_hybrid_core_checksum_method_debuglistener_on_debug_event(
+    fun uniffi_solo_conversation_core_checksum_method_debuglistener_on_debug_event(
 ): Short
-fun uniffi_adaptive_hybrid_core_checksum_method_hybridconfig_mode(
+fun uniffi_solo_conversation_core_checksum_method_hybridconfig_mode(
 ): Short
-fun uniffi_adaptive_hybrid_core_checksum_method_hybridconfig_set_mode(
+fun uniffi_solo_conversation_core_checksum_method_hybridconfig_set_mode(
 ): Short
-fun uniffi_adaptive_hybrid_core_checksum_method_hybridconfig_source_language(
+fun uniffi_solo_conversation_core_checksum_method_hybridconfig_source_language(
 ): Short
-fun uniffi_adaptive_hybrid_core_checksum_method_hybridconfig_target_language(
+fun uniffi_solo_conversation_core_checksum_method_hybridconfig_target_language(
 ): Short
-fun uniffi_adaptive_hybrid_core_checksum_method_hybridsession_begin_push_to_talk(
+fun uniffi_solo_conversation_core_checksum_method_hybridsession_begin_push_to_talk(
 ): Short
-fun uniffi_adaptive_hybrid_core_checksum_method_hybridsession_end_push_to_talk(
+fun uniffi_solo_conversation_core_checksum_method_hybridsession_end_push_to_talk(
 ): Short
-fun uniffi_adaptive_hybrid_core_checksum_method_hybridsession_is_running(
+fun uniffi_solo_conversation_core_checksum_method_hybridsession_is_running(
 ): Short
-fun uniffi_adaptive_hybrid_core_checksum_method_hybridsession_mode(
+fun uniffi_solo_conversation_core_checksum_method_hybridsession_mode(
 ): Short
-fun uniffi_adaptive_hybrid_core_checksum_method_hybridsession_notify_playback_window(
+fun uniffi_solo_conversation_core_checksum_method_hybridsession_notify_playback_window(
 ): Short
-fun uniffi_adaptive_hybrid_core_checksum_method_hybridsession_push_audio_chunk(
+fun uniffi_solo_conversation_core_checksum_method_hybridsession_push_audio_chunk(
 ): Short
-fun uniffi_adaptive_hybrid_core_checksum_method_hybridsession_set_debug_listener(
+fun uniffi_solo_conversation_core_checksum_method_hybridsession_set_debug_listener(
 ): Short
-fun uniffi_adaptive_hybrid_core_checksum_method_hybridsession_set_listener(
+fun uniffi_solo_conversation_core_checksum_method_hybridsession_set_listener(
 ): Short
-fun uniffi_adaptive_hybrid_core_checksum_method_hybridsession_set_mode(
+fun uniffi_solo_conversation_core_checksum_method_hybridsession_set_mode(
 ): Short
-fun uniffi_adaptive_hybrid_core_checksum_method_hybridsession_start(
+fun uniffi_solo_conversation_core_checksum_method_hybridsession_start(
 ): Short
-fun uniffi_adaptive_hybrid_core_checksum_method_hybridsession_stop(
+fun uniffi_solo_conversation_core_checksum_method_hybridsession_stop(
 ): Short
-fun uniffi_adaptive_hybrid_core_checksum_method_translationlistener_on_translated_text(
+fun uniffi_solo_conversation_core_checksum_method_translationlistener_on_translated_text(
 ): Short
-fun uniffi_adaptive_hybrid_core_checksum_constructor_hybridconfig_new(
+fun uniffi_solo_conversation_core_checksum_constructor_hybridconfig_new(
 ): Short
-fun uniffi_adaptive_hybrid_core_checksum_constructor_hybridsession_new(
+fun uniffi_solo_conversation_core_checksum_constructor_hybridsession_new(
 ): Short
-fun ffi_adaptive_hybrid_core_uniffi_contract_version(
+fun ffi_solo_conversation_core_uniffi_contract_version(
 ): Int
 
 }
@@ -861,7 +861,7 @@ fun ffi_adaptive_hybrid_core_uniffi_contract_version(
 internal interface UniffiLib : Library {
     companion object {
         internal val INSTANCE: UniffiLib by lazy {
-            val componentName = "adaptive_hybrid_core"
+            val componentName = "solo_conversation_core"
             // For large crates we prevent `MethodTooLargeException` (see #2340)
             // N.B. the name of the extension is very misleading, since it is 
             // rather `InterfaceTooLargeException`, caused by too many methods 
@@ -902,175 +902,175 @@ internal interface UniffiLib : Library {
     }
 
     // FFI functions
-    fun uniffi_adaptive_hybrid_core_fn_clone_debuglistener(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_solo_conversation_core_fn_clone_debuglistener(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
 ): Pointer
-fun uniffi_adaptive_hybrid_core_fn_free_debuglistener(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+fun uniffi_solo_conversation_core_fn_free_debuglistener(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
-fun uniffi_adaptive_hybrid_core_fn_init_callback_vtable_debuglistener(`vtable`: UniffiVTableCallbackInterfaceDebugListener,
+fun uniffi_solo_conversation_core_fn_init_callback_vtable_debuglistener(`vtable`: UniffiVTableCallbackInterfaceDebugListener,
 ): Unit
-fun uniffi_adaptive_hybrid_core_fn_method_debuglistener_on_debug_event(`ptr`: Pointer,`direction`: RustBuffer.ByValue,`event`: RustBuffer.ByValue,`elapsedMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
+fun uniffi_solo_conversation_core_fn_method_debuglistener_on_debug_event(`ptr`: Pointer,`direction`: RustBuffer.ByValue,`event`: RustBuffer.ByValue,`elapsedMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
-fun uniffi_adaptive_hybrid_core_fn_clone_hybridconfig(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+fun uniffi_solo_conversation_core_fn_clone_hybridconfig(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
 ): Pointer
-fun uniffi_adaptive_hybrid_core_fn_free_hybridconfig(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+fun uniffi_solo_conversation_core_fn_free_hybridconfig(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
-fun uniffi_adaptive_hybrid_core_fn_constructor_hybridconfig_new(`firstLanguageCode`: RustBuffer.ByValue,`secondLanguageCode`: RustBuffer.ByValue,`firstToSecondMode`: RustBuffer.ByValue,`secondToFirstMode`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+fun uniffi_solo_conversation_core_fn_constructor_hybridconfig_new(`firstLanguageCode`: RustBuffer.ByValue,`secondLanguageCode`: RustBuffer.ByValue,`firstToSecondMode`: RustBuffer.ByValue,`secondToFirstMode`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Pointer
-fun uniffi_adaptive_hybrid_core_fn_method_hybridconfig_mode(`ptr`: Pointer,`direction`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+fun uniffi_solo_conversation_core_fn_method_hybridconfig_mode(`ptr`: Pointer,`direction`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
-fun uniffi_adaptive_hybrid_core_fn_method_hybridconfig_set_mode(`ptr`: Pointer,`direction`: RustBuffer.ByValue,`mode`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+fun uniffi_solo_conversation_core_fn_method_hybridconfig_set_mode(`ptr`: Pointer,`direction`: RustBuffer.ByValue,`mode`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
-fun uniffi_adaptive_hybrid_core_fn_method_hybridconfig_source_language(`ptr`: Pointer,`direction`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+fun uniffi_solo_conversation_core_fn_method_hybridconfig_source_language(`ptr`: Pointer,`direction`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
-fun uniffi_adaptive_hybrid_core_fn_method_hybridconfig_target_language(`ptr`: Pointer,`direction`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+fun uniffi_solo_conversation_core_fn_method_hybridconfig_target_language(`ptr`: Pointer,`direction`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
-fun uniffi_adaptive_hybrid_core_fn_clone_hybridsession(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+fun uniffi_solo_conversation_core_fn_clone_hybridsession(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
 ): Pointer
-fun uniffi_adaptive_hybrid_core_fn_free_hybridsession(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+fun uniffi_solo_conversation_core_fn_free_hybridsession(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
-fun uniffi_adaptive_hybrid_core_fn_constructor_hybridsession_new(`config`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+fun uniffi_solo_conversation_core_fn_constructor_hybridsession_new(`config`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
 ): Pointer
-fun uniffi_adaptive_hybrid_core_fn_method_hybridsession_begin_push_to_talk(`ptr`: Pointer,`direction`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+fun uniffi_solo_conversation_core_fn_method_hybridsession_begin_push_to_talk(`ptr`: Pointer,`direction`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
-fun uniffi_adaptive_hybrid_core_fn_method_hybridsession_end_push_to_talk(`ptr`: Pointer,`direction`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+fun uniffi_solo_conversation_core_fn_method_hybridsession_end_push_to_talk(`ptr`: Pointer,`direction`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
-fun uniffi_adaptive_hybrid_core_fn_method_hybridsession_is_running(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+fun uniffi_solo_conversation_core_fn_method_hybridsession_is_running(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
 ): Byte
-fun uniffi_adaptive_hybrid_core_fn_method_hybridsession_mode(`ptr`: Pointer,`direction`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+fun uniffi_solo_conversation_core_fn_method_hybridsession_mode(`ptr`: Pointer,`direction`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
-fun uniffi_adaptive_hybrid_core_fn_method_hybridsession_notify_playback_window(`ptr`: Pointer,`direction`: RustBuffer.ByValue,`active`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+fun uniffi_solo_conversation_core_fn_method_hybridsession_notify_playback_window(`ptr`: Pointer,`direction`: RustBuffer.ByValue,`active`: Byte,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
-fun uniffi_adaptive_hybrid_core_fn_method_hybridsession_push_audio_chunk(`ptr`: Pointer,`pcm`: RustBuffer.ByValue,`chunkDurationMs`: Int,uniffi_out_err: UniffiRustCallStatus, 
+fun uniffi_solo_conversation_core_fn_method_hybridsession_push_audio_chunk(`ptr`: Pointer,`pcm`: RustBuffer.ByValue,`chunkDurationMs`: Int,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
-fun uniffi_adaptive_hybrid_core_fn_method_hybridsession_set_debug_listener(`ptr`: Pointer,`listener`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+fun uniffi_solo_conversation_core_fn_method_hybridsession_set_debug_listener(`ptr`: Pointer,`listener`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
-fun uniffi_adaptive_hybrid_core_fn_method_hybridsession_set_listener(`ptr`: Pointer,`listener`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+fun uniffi_solo_conversation_core_fn_method_hybridsession_set_listener(`ptr`: Pointer,`listener`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
-fun uniffi_adaptive_hybrid_core_fn_method_hybridsession_set_mode(`ptr`: Pointer,`direction`: RustBuffer.ByValue,`mode`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+fun uniffi_solo_conversation_core_fn_method_hybridsession_set_mode(`ptr`: Pointer,`direction`: RustBuffer.ByValue,`mode`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
-fun uniffi_adaptive_hybrid_core_fn_method_hybridsession_start(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+fun uniffi_solo_conversation_core_fn_method_hybridsession_start(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
-fun uniffi_adaptive_hybrid_core_fn_method_hybridsession_stop(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+fun uniffi_solo_conversation_core_fn_method_hybridsession_stop(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
-fun uniffi_adaptive_hybrid_core_fn_clone_translationlistener(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+fun uniffi_solo_conversation_core_fn_clone_translationlistener(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
 ): Pointer
-fun uniffi_adaptive_hybrid_core_fn_free_translationlistener(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+fun uniffi_solo_conversation_core_fn_free_translationlistener(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
-fun uniffi_adaptive_hybrid_core_fn_init_callback_vtable_translationlistener(`vtable`: UniffiVTableCallbackInterfaceTranslationListener,
+fun uniffi_solo_conversation_core_fn_init_callback_vtable_translationlistener(`vtable`: UniffiVTableCallbackInterfaceTranslationListener,
 ): Unit
-fun uniffi_adaptive_hybrid_core_fn_method_translationlistener_on_translated_text(`ptr`: Pointer,`direction`: RustBuffer.ByValue,`text`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+fun uniffi_solo_conversation_core_fn_method_translationlistener_on_translated_text(`ptr`: Pointer,`direction`: RustBuffer.ByValue,`text`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
-fun ffi_adaptive_hybrid_core_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
+fun ffi_solo_conversation_core_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
-fun ffi_adaptive_hybrid_core_rustbuffer_from_bytes(`bytes`: ForeignBytes.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+fun ffi_solo_conversation_core_rustbuffer_from_bytes(`bytes`: ForeignBytes.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
-fun ffi_adaptive_hybrid_core_rustbuffer_free(`buf`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+fun ffi_solo_conversation_core_rustbuffer_free(`buf`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
-fun ffi_adaptive_hybrid_core_rustbuffer_reserve(`buf`: RustBuffer.ByValue,`additional`: Long,uniffi_out_err: UniffiRustCallStatus, 
+fun ffi_solo_conversation_core_rustbuffer_reserve(`buf`: RustBuffer.ByValue,`additional`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
-fun ffi_adaptive_hybrid_core_rust_future_poll_u8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+fun ffi_solo_conversation_core_rust_future_poll_u8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_cancel_u8(`handle`: Long,
+fun ffi_solo_conversation_core_rust_future_cancel_u8(`handle`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_free_u8(`handle`: Long,
+fun ffi_solo_conversation_core_rust_future_free_u8(`handle`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_complete_u8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+fun ffi_solo_conversation_core_rust_future_complete_u8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Byte
-fun ffi_adaptive_hybrid_core_rust_future_poll_i8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+fun ffi_solo_conversation_core_rust_future_poll_i8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_cancel_i8(`handle`: Long,
+fun ffi_solo_conversation_core_rust_future_cancel_i8(`handle`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_free_i8(`handle`: Long,
+fun ffi_solo_conversation_core_rust_future_free_i8(`handle`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_complete_i8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+fun ffi_solo_conversation_core_rust_future_complete_i8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Byte
-fun ffi_adaptive_hybrid_core_rust_future_poll_u16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+fun ffi_solo_conversation_core_rust_future_poll_u16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_cancel_u16(`handle`: Long,
+fun ffi_solo_conversation_core_rust_future_cancel_u16(`handle`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_free_u16(`handle`: Long,
+fun ffi_solo_conversation_core_rust_future_free_u16(`handle`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_complete_u16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+fun ffi_solo_conversation_core_rust_future_complete_u16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Short
-fun ffi_adaptive_hybrid_core_rust_future_poll_i16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+fun ffi_solo_conversation_core_rust_future_poll_i16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_cancel_i16(`handle`: Long,
+fun ffi_solo_conversation_core_rust_future_cancel_i16(`handle`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_free_i16(`handle`: Long,
+fun ffi_solo_conversation_core_rust_future_free_i16(`handle`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_complete_i16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+fun ffi_solo_conversation_core_rust_future_complete_i16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Short
-fun ffi_adaptive_hybrid_core_rust_future_poll_u32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+fun ffi_solo_conversation_core_rust_future_poll_u32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_cancel_u32(`handle`: Long,
+fun ffi_solo_conversation_core_rust_future_cancel_u32(`handle`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_free_u32(`handle`: Long,
+fun ffi_solo_conversation_core_rust_future_free_u32(`handle`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_complete_u32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+fun ffi_solo_conversation_core_rust_future_complete_u32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Int
-fun ffi_adaptive_hybrid_core_rust_future_poll_i32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+fun ffi_solo_conversation_core_rust_future_poll_i32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_cancel_i32(`handle`: Long,
+fun ffi_solo_conversation_core_rust_future_cancel_i32(`handle`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_free_i32(`handle`: Long,
+fun ffi_solo_conversation_core_rust_future_free_i32(`handle`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_complete_i32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+fun ffi_solo_conversation_core_rust_future_complete_i32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Int
-fun ffi_adaptive_hybrid_core_rust_future_poll_u64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+fun ffi_solo_conversation_core_rust_future_poll_u64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_cancel_u64(`handle`: Long,
+fun ffi_solo_conversation_core_rust_future_cancel_u64(`handle`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_free_u64(`handle`: Long,
+fun ffi_solo_conversation_core_rust_future_free_u64(`handle`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_complete_u64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+fun ffi_solo_conversation_core_rust_future_complete_u64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Long
-fun ffi_adaptive_hybrid_core_rust_future_poll_i64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+fun ffi_solo_conversation_core_rust_future_poll_i64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_cancel_i64(`handle`: Long,
+fun ffi_solo_conversation_core_rust_future_cancel_i64(`handle`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_free_i64(`handle`: Long,
+fun ffi_solo_conversation_core_rust_future_free_i64(`handle`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_complete_i64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+fun ffi_solo_conversation_core_rust_future_complete_i64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Long
-fun ffi_adaptive_hybrid_core_rust_future_poll_f32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+fun ffi_solo_conversation_core_rust_future_poll_f32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_cancel_f32(`handle`: Long,
+fun ffi_solo_conversation_core_rust_future_cancel_f32(`handle`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_free_f32(`handle`: Long,
+fun ffi_solo_conversation_core_rust_future_free_f32(`handle`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_complete_f32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+fun ffi_solo_conversation_core_rust_future_complete_f32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Float
-fun ffi_adaptive_hybrid_core_rust_future_poll_f64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+fun ffi_solo_conversation_core_rust_future_poll_f64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_cancel_f64(`handle`: Long,
+fun ffi_solo_conversation_core_rust_future_cancel_f64(`handle`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_free_f64(`handle`: Long,
+fun ffi_solo_conversation_core_rust_future_free_f64(`handle`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_complete_f64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+fun ffi_solo_conversation_core_rust_future_complete_f64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Double
-fun ffi_adaptive_hybrid_core_rust_future_poll_pointer(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+fun ffi_solo_conversation_core_rust_future_poll_pointer(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_cancel_pointer(`handle`: Long,
+fun ffi_solo_conversation_core_rust_future_cancel_pointer(`handle`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_free_pointer(`handle`: Long,
+fun ffi_solo_conversation_core_rust_future_free_pointer(`handle`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_complete_pointer(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+fun ffi_solo_conversation_core_rust_future_complete_pointer(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Pointer
-fun ffi_adaptive_hybrid_core_rust_future_poll_rust_buffer(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+fun ffi_solo_conversation_core_rust_future_poll_rust_buffer(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_cancel_rust_buffer(`handle`: Long,
+fun ffi_solo_conversation_core_rust_future_cancel_rust_buffer(`handle`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_free_rust_buffer(`handle`: Long,
+fun ffi_solo_conversation_core_rust_future_free_rust_buffer(`handle`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_complete_rust_buffer(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+fun ffi_solo_conversation_core_rust_future_complete_rust_buffer(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
-fun ffi_adaptive_hybrid_core_rust_future_poll_void(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+fun ffi_solo_conversation_core_rust_future_poll_void(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_cancel_void(`handle`: Long,
+fun ffi_solo_conversation_core_rust_future_cancel_void(`handle`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_free_void(`handle`: Long,
+fun ffi_solo_conversation_core_rust_future_free_void(`handle`: Long,
 ): Unit
-fun ffi_adaptive_hybrid_core_rust_future_complete_void(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+fun ffi_solo_conversation_core_rust_future_complete_void(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
 
 }
@@ -1079,68 +1079,68 @@ private fun uniffiCheckContractApiVersion(lib: IntegrityCheckingUniffiLib) {
     // Get the bindings contract version from our ComponentInterface
     val bindings_contract_version = 29
     // Get the scaffolding contract version by calling the into the dylib
-    val scaffolding_contract_version = lib.ffi_adaptive_hybrid_core_uniffi_contract_version()
+    val scaffolding_contract_version = lib.ffi_solo_conversation_core_uniffi_contract_version()
     if (bindings_contract_version != scaffolding_contract_version) {
         throw RuntimeException("UniFFI contract version mismatch: try cleaning and rebuilding your project")
     }
 }
 @Suppress("UNUSED_PARAMETER")
 private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
-    if (lib.uniffi_adaptive_hybrid_core_checksum_method_debuglistener_on_debug_event() != 54453.toShort()) {
+    if (lib.uniffi_solo_conversation_core_checksum_method_debuglistener_on_debug_event() != 60985.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_adaptive_hybrid_core_checksum_method_hybridconfig_mode() != 54806.toShort()) {
+    if (lib.uniffi_solo_conversation_core_checksum_method_hybridconfig_mode() != 25584.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_adaptive_hybrid_core_checksum_method_hybridconfig_set_mode() != 44154.toShort()) {
+    if (lib.uniffi_solo_conversation_core_checksum_method_hybridconfig_set_mode() != 13490.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_adaptive_hybrid_core_checksum_method_hybridconfig_source_language() != 59626.toShort()) {
+    if (lib.uniffi_solo_conversation_core_checksum_method_hybridconfig_source_language() != 30924.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_adaptive_hybrid_core_checksum_method_hybridconfig_target_language() != 39405.toShort()) {
+    if (lib.uniffi_solo_conversation_core_checksum_method_hybridconfig_target_language() != 12191.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_adaptive_hybrid_core_checksum_method_hybridsession_begin_push_to_talk() != 48508.toShort()) {
+    if (lib.uniffi_solo_conversation_core_checksum_method_hybridsession_begin_push_to_talk() != 7137.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_adaptive_hybrid_core_checksum_method_hybridsession_end_push_to_talk() != 40319.toShort()) {
+    if (lib.uniffi_solo_conversation_core_checksum_method_hybridsession_end_push_to_talk() != 10177.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_adaptive_hybrid_core_checksum_method_hybridsession_is_running() != 18445.toShort()) {
+    if (lib.uniffi_solo_conversation_core_checksum_method_hybridsession_is_running() != 23495.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_adaptive_hybrid_core_checksum_method_hybridsession_mode() != 54857.toShort()) {
+    if (lib.uniffi_solo_conversation_core_checksum_method_hybridsession_mode() != 33701.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_adaptive_hybrid_core_checksum_method_hybridsession_notify_playback_window() != 31365.toShort()) {
+    if (lib.uniffi_solo_conversation_core_checksum_method_hybridsession_notify_playback_window() != 8351.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_adaptive_hybrid_core_checksum_method_hybridsession_push_audio_chunk() != 25697.toShort()) {
+    if (lib.uniffi_solo_conversation_core_checksum_method_hybridsession_push_audio_chunk() != 20915.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_adaptive_hybrid_core_checksum_method_hybridsession_set_debug_listener() != 3477.toShort()) {
+    if (lib.uniffi_solo_conversation_core_checksum_method_hybridsession_set_debug_listener() != 7711.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_adaptive_hybrid_core_checksum_method_hybridsession_set_listener() != 59285.toShort()) {
+    if (lib.uniffi_solo_conversation_core_checksum_method_hybridsession_set_listener() != 49054.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_adaptive_hybrid_core_checksum_method_hybridsession_set_mode() != 24870.toShort()) {
+    if (lib.uniffi_solo_conversation_core_checksum_method_hybridsession_set_mode() != 5481.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_adaptive_hybrid_core_checksum_method_hybridsession_start() != 32252.toShort()) {
+    if (lib.uniffi_solo_conversation_core_checksum_method_hybridsession_start() != 3853.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_adaptive_hybrid_core_checksum_method_hybridsession_stop() != 31381.toShort()) {
+    if (lib.uniffi_solo_conversation_core_checksum_method_hybridsession_stop() != 39612.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_adaptive_hybrid_core_checksum_method_translationlistener_on_translated_text() != 58283.toShort()) {
+    if (lib.uniffi_solo_conversation_core_checksum_method_translationlistener_on_translated_text() != 7981.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_adaptive_hybrid_core_checksum_constructor_hybridconfig_new() != 2322.toShort()) {
+    if (lib.uniffi_solo_conversation_core_checksum_constructor_hybridconfig_new() != 53144.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_adaptive_hybrid_core_checksum_constructor_hybridsession_new() != 46599.toShort()) {
+    if (lib.uniffi_solo_conversation_core_checksum_constructor_hybridsession_new() != 28734.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
 }
@@ -1654,7 +1654,7 @@ open class DebugListenerImpl: Disposable, AutoCloseable, DebugListener
         override fun run() {
             pointer?.let { ptr ->
                 uniffiRustCall { status ->
-                    UniffiLib.INSTANCE.uniffi_adaptive_hybrid_core_fn_free_debuglistener(ptr, status)
+                    UniffiLib.INSTANCE.uniffi_solo_conversation_core_fn_free_debuglistener(ptr, status)
                 }
             }
         }
@@ -1662,7 +1662,7 @@ open class DebugListenerImpl: Disposable, AutoCloseable, DebugListener
 
     fun uniffiClonePointer(): Pointer {
         return uniffiRustCall() { status ->
-            UniffiLib.INSTANCE.uniffi_adaptive_hybrid_core_fn_clone_debuglistener(pointer!!, status)
+            UniffiLib.INSTANCE.uniffi_solo_conversation_core_fn_clone_debuglistener(pointer!!, status)
         }
     }
 
@@ -1670,7 +1670,7 @@ open class DebugListenerImpl: Disposable, AutoCloseable, DebugListener
         = 
     callWithPointer {
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_adaptive_hybrid_core_fn_method_debuglistener_on_debug_event(
+    UniffiLib.INSTANCE.uniffi_solo_conversation_core_fn_method_debuglistener_on_debug_event(
         it, FfiConverterTypeDirection.lower(`direction`),FfiConverterTypeGateEvent.lower(`event`),FfiConverterULong.lower(`elapsedMs`),_status)
 }
     }
@@ -1717,7 +1717,7 @@ internal object uniffiCallbackInterfaceDebugListener {
     // Registers the foreign callback with the Rust side.
     // This method is generated for each callback interface.
     internal fun register(lib: UniffiLib) {
-        lib.uniffi_adaptive_hybrid_core_fn_init_callback_vtable_debuglistener(vtable)
+        lib.uniffi_solo_conversation_core_fn_init_callback_vtable_debuglistener(vtable)
     }
 }
 
@@ -1900,7 +1900,7 @@ open class HybridConfig: Disposable, AutoCloseable, HybridConfigInterface
     constructor(`firstLanguageCode`: kotlin.String, `secondLanguageCode`: kotlin.String, `firstToSecondMode`: DirectionMode, `secondToFirstMode`: DirectionMode) :
         this(
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_adaptive_hybrid_core_fn_constructor_hybridconfig_new(
+    UniffiLib.INSTANCE.uniffi_solo_conversation_core_fn_constructor_hybridconfig_new(
         FfiConverterString.lower(`firstLanguageCode`),FfiConverterString.lower(`secondLanguageCode`),FfiConverterTypeDirectionMode.lower(`firstToSecondMode`),FfiConverterTypeDirectionMode.lower(`secondToFirstMode`),_status)
 }
     )
@@ -1956,7 +1956,7 @@ open class HybridConfig: Disposable, AutoCloseable, HybridConfigInterface
         override fun run() {
             pointer?.let { ptr ->
                 uniffiRustCall { status ->
-                    UniffiLib.INSTANCE.uniffi_adaptive_hybrid_core_fn_free_hybridconfig(ptr, status)
+                    UniffiLib.INSTANCE.uniffi_solo_conversation_core_fn_free_hybridconfig(ptr, status)
                 }
             }
         }
@@ -1964,7 +1964,7 @@ open class HybridConfig: Disposable, AutoCloseable, HybridConfigInterface
 
     fun uniffiClonePointer(): Pointer {
         return uniffiRustCall() { status ->
-            UniffiLib.INSTANCE.uniffi_adaptive_hybrid_core_fn_clone_hybridconfig(pointer!!, status)
+            UniffiLib.INSTANCE.uniffi_solo_conversation_core_fn_clone_hybridconfig(pointer!!, status)
         }
     }
 
@@ -1972,7 +1972,7 @@ open class HybridConfig: Disposable, AutoCloseable, HybridConfigInterface
             return FfiConverterTypeDirectionMode.lift(
     callWithPointer {
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_adaptive_hybrid_core_fn_method_hybridconfig_mode(
+    UniffiLib.INSTANCE.uniffi_solo_conversation_core_fn_method_hybridconfig_mode(
         it, FfiConverterTypeDirection.lower(`direction`),_status)
 }
     }
@@ -1984,7 +1984,7 @@ open class HybridConfig: Disposable, AutoCloseable, HybridConfigInterface
         = 
     callWithPointer {
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_adaptive_hybrid_core_fn_method_hybridconfig_set_mode(
+    UniffiLib.INSTANCE.uniffi_solo_conversation_core_fn_method_hybridconfig_set_mode(
         it, FfiConverterTypeDirection.lower(`direction`),FfiConverterTypeDirectionMode.lower(`mode`),_status)
 }
     }
@@ -1999,7 +1999,7 @@ open class HybridConfig: Disposable, AutoCloseable, HybridConfigInterface
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_adaptive_hybrid_core_fn_method_hybridconfig_source_language(
+    UniffiLib.INSTANCE.uniffi_solo_conversation_core_fn_method_hybridconfig_source_language(
         it, FfiConverterTypeDirection.lower(`direction`),_status)
 }
     }
@@ -2014,7 +2014,7 @@ open class HybridConfig: Disposable, AutoCloseable, HybridConfigInterface
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_adaptive_hybrid_core_fn_method_hybridconfig_target_language(
+    UniffiLib.INSTANCE.uniffi_solo_conversation_core_fn_method_hybridconfig_target_language(
         it, FfiConverterTypeDirection.lower(`direction`),_status)
 }
     }
@@ -2158,7 +2158,7 @@ public object FfiConverterTypeHybridConfig: FfiConverter<HybridConfig, Pointer> 
 
 
 /**
- * One Adaptive Hybrid Mode session: owns the config and the per-direction
+ * One Solo Conversation mode session: owns the config and the per-direction
  * pipeline state (`PipelineManager` — §2's two independent loops, §4's echo
  * gating, §5/§6's disambiguation).
  */
@@ -2219,7 +2219,7 @@ public interface HybridSessionInterface {
 }
 
 /**
- * One Adaptive Hybrid Mode session: owns the config and the per-direction
+ * One Solo Conversation mode session: owns the config and the per-direction
  * pipeline state (`PipelineManager` — §2's two independent loops, §4's echo
  * gating, §5/§6's disambiguation).
  */
@@ -2244,7 +2244,7 @@ open class HybridSession: Disposable, AutoCloseable, HybridSessionInterface
     constructor(`config`: HybridConfig) :
         this(
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_adaptive_hybrid_core_fn_constructor_hybridsession_new(
+    UniffiLib.INSTANCE.uniffi_solo_conversation_core_fn_constructor_hybridsession_new(
         FfiConverterTypeHybridConfig.lower(`config`),_status)
 }
     )
@@ -2300,7 +2300,7 @@ open class HybridSession: Disposable, AutoCloseable, HybridSessionInterface
         override fun run() {
             pointer?.let { ptr ->
                 uniffiRustCall { status ->
-                    UniffiLib.INSTANCE.uniffi_adaptive_hybrid_core_fn_free_hybridsession(ptr, status)
+                    UniffiLib.INSTANCE.uniffi_solo_conversation_core_fn_free_hybridsession(ptr, status)
                 }
             }
         }
@@ -2308,7 +2308,7 @@ open class HybridSession: Disposable, AutoCloseable, HybridSessionInterface
 
     fun uniffiClonePointer(): Pointer {
         return uniffiRustCall() { status ->
-            UniffiLib.INSTANCE.uniffi_adaptive_hybrid_core_fn_clone_hybridsession(pointer!!, status)
+            UniffiLib.INSTANCE.uniffi_solo_conversation_core_fn_clone_hybridsession(pointer!!, status)
         }
     }
 
@@ -2322,7 +2322,7 @@ open class HybridSession: Disposable, AutoCloseable, HybridSessionInterface
         = 
     callWithPointer {
     uniffiRustCallWithError(HybridException) { _status ->
-    UniffiLib.INSTANCE.uniffi_adaptive_hybrid_core_fn_method_hybridsession_begin_push_to_talk(
+    UniffiLib.INSTANCE.uniffi_solo_conversation_core_fn_method_hybridsession_begin_push_to_talk(
         it, FfiConverterTypeDirection.lower(`direction`),_status)
 }
     }
@@ -2338,7 +2338,7 @@ open class HybridSession: Disposable, AutoCloseable, HybridSessionInterface
         = 
     callWithPointer {
     uniffiRustCallWithError(HybridException) { _status ->
-    UniffiLib.INSTANCE.uniffi_adaptive_hybrid_core_fn_method_hybridsession_end_push_to_talk(
+    UniffiLib.INSTANCE.uniffi_solo_conversation_core_fn_method_hybridsession_end_push_to_talk(
         it, FfiConverterTypeDirection.lower(`direction`),_status)
 }
     }
@@ -2349,7 +2349,7 @@ open class HybridSession: Disposable, AutoCloseable, HybridSessionInterface
             return FfiConverterBoolean.lift(
     callWithPointer {
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_adaptive_hybrid_core_fn_method_hybridsession_is_running(
+    UniffiLib.INSTANCE.uniffi_solo_conversation_core_fn_method_hybridsession_is_running(
         it, _status)
 }
     }
@@ -2361,7 +2361,7 @@ open class HybridSession: Disposable, AutoCloseable, HybridSessionInterface
             return FfiConverterTypeDirectionMode.lift(
     callWithPointer {
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_adaptive_hybrid_core_fn_method_hybridsession_mode(
+    UniffiLib.INSTANCE.uniffi_solo_conversation_core_fn_method_hybridsession_mode(
         it, FfiConverterTypeDirection.lower(`direction`),_status)
 }
     }
@@ -2377,7 +2377,7 @@ open class HybridSession: Disposable, AutoCloseable, HybridSessionInterface
         = 
     callWithPointer {
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_adaptive_hybrid_core_fn_method_hybridsession_notify_playback_window(
+    UniffiLib.INSTANCE.uniffi_solo_conversation_core_fn_method_hybridsession_notify_playback_window(
         it, FfiConverterTypeDirection.lower(`direction`),FfiConverterBoolean.lower(`active`),_status)
 }
     }
@@ -2400,7 +2400,7 @@ open class HybridSession: Disposable, AutoCloseable, HybridSessionInterface
         = 
     callWithPointer {
     uniffiRustCallWithError(HybridException) { _status ->
-    UniffiLib.INSTANCE.uniffi_adaptive_hybrid_core_fn_method_hybridsession_push_audio_chunk(
+    UniffiLib.INSTANCE.uniffi_solo_conversation_core_fn_method_hybridsession_push_audio_chunk(
         it, FfiConverterSequenceFloat.lower(`pcm`),FfiConverterUInt.lower(`chunkDurationMs`),_status)
 }
     }
@@ -2416,7 +2416,7 @@ open class HybridSession: Disposable, AutoCloseable, HybridSessionInterface
         = 
     callWithPointer {
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_adaptive_hybrid_core_fn_method_hybridsession_set_debug_listener(
+    UniffiLib.INSTANCE.uniffi_solo_conversation_core_fn_method_hybridsession_set_debug_listener(
         it, FfiConverterTypeDebugListener.lower(`listener`),_status)
 }
     }
@@ -2427,7 +2427,7 @@ open class HybridSession: Disposable, AutoCloseable, HybridSessionInterface
         = 
     callWithPointer {
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_adaptive_hybrid_core_fn_method_hybridsession_set_listener(
+    UniffiLib.INSTANCE.uniffi_solo_conversation_core_fn_method_hybridsession_set_listener(
         it, FfiConverterTypeTranslationListener.lower(`listener`),_status)
 }
     }
@@ -2438,7 +2438,7 @@ open class HybridSession: Disposable, AutoCloseable, HybridSessionInterface
         = 
     callWithPointer {
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_adaptive_hybrid_core_fn_method_hybridsession_set_mode(
+    UniffiLib.INSTANCE.uniffi_solo_conversation_core_fn_method_hybridsession_set_mode(
         it, FfiConverterTypeDirection.lower(`direction`),FfiConverterTypeDirectionMode.lower(`mode`),_status)
 }
     }
@@ -2450,7 +2450,7 @@ open class HybridSession: Disposable, AutoCloseable, HybridSessionInterface
         = 
     callWithPointer {
     uniffiRustCallWithError(HybridException) { _status ->
-    UniffiLib.INSTANCE.uniffi_adaptive_hybrid_core_fn_method_hybridsession_start(
+    UniffiLib.INSTANCE.uniffi_solo_conversation_core_fn_method_hybridsession_start(
         it, _status)
 }
     }
@@ -2462,7 +2462,7 @@ open class HybridSession: Disposable, AutoCloseable, HybridSessionInterface
         = 
     callWithPointer {
     uniffiRustCallWithError(HybridException) { _status ->
-    UniffiLib.INSTANCE.uniffi_adaptive_hybrid_core_fn_method_hybridsession_stop(
+    UniffiLib.INSTANCE.uniffi_solo_conversation_core_fn_method_hybridsession_stop(
         it, _status)
 }
     }
@@ -2689,7 +2689,7 @@ open class TranslationListenerImpl: Disposable, AutoCloseable, TranslationListen
         override fun run() {
             pointer?.let { ptr ->
                 uniffiRustCall { status ->
-                    UniffiLib.INSTANCE.uniffi_adaptive_hybrid_core_fn_free_translationlistener(ptr, status)
+                    UniffiLib.INSTANCE.uniffi_solo_conversation_core_fn_free_translationlistener(ptr, status)
                 }
             }
         }
@@ -2697,7 +2697,7 @@ open class TranslationListenerImpl: Disposable, AutoCloseable, TranslationListen
 
     fun uniffiClonePointer(): Pointer {
         return uniffiRustCall() { status ->
-            UniffiLib.INSTANCE.uniffi_adaptive_hybrid_core_fn_clone_translationlistener(pointer!!, status)
+            UniffiLib.INSTANCE.uniffi_solo_conversation_core_fn_clone_translationlistener(pointer!!, status)
         }
     }
 
@@ -2705,7 +2705,7 @@ open class TranslationListenerImpl: Disposable, AutoCloseable, TranslationListen
         = 
     callWithPointer {
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_adaptive_hybrid_core_fn_method_translationlistener_on_translated_text(
+    UniffiLib.INSTANCE.uniffi_solo_conversation_core_fn_method_translationlistener_on_translated_text(
         it, FfiConverterTypeDirection.lower(`direction`),FfiConverterString.lower(`text`),_status)
 }
     }
@@ -2751,7 +2751,7 @@ internal object uniffiCallbackInterfaceTranslationListener {
     // Registers the foreign callback with the Rust side.
     // This method is generated for each callback interface.
     internal fun register(lib: UniffiLib) {
-        lib.uniffi_adaptive_hybrid_core_fn_init_callback_vtable_translationlistener(vtable)
+        lib.uniffi_solo_conversation_core_fn_init_callback_vtable_translationlistener(vtable)
     }
 }
 
@@ -2830,11 +2830,11 @@ public object FfiConverterTypeDirection: FfiConverterRustBuffer<Direction> {
  *
  * Live is continuous VAD-gated listening with headphone output; PushToTalk is
  * button-triggered with phone-speaker output. See
- * `docs/adaptive-hybrid-mode-design.md` for why these can't share a state
+ * `docs/solo-conversation-mode-design.md` for why these can't share a state
  * machine.
  *
  * `Off` disables the direction entirely (no listening, no output) — added
- * per `docs/adaptive-hybrid-mode-design.md` §1a rather than left implicit,
+ * per `docs/solo-conversation-mode-design.md` §1a rather than left implicit,
  * since "not started" and "explicitly off" would otherwise be two different
  * things for the pipeline (Phase 4) to reconcile, and retrofitting a third
  * enum variant after the UniFFI surface and settings UI both bind to a

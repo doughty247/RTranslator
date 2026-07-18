@@ -6,9 +6,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 cargo build --lib
-LIB=target/debug/libadaptive_hybrid_core.so
+LIB=target/debug/libsolo_conversation_core.so
 if [ ! -f "$LIB" ]; then
-  LIB=target/debug/libadaptive_hybrid_core.dylib
+  LIB=target/debug/libsolo_conversation_core.dylib
 fi
 
 mkdir -p target/bindings/python
