@@ -1,5 +1,26 @@
 <img src="https://github.com/niedev/RTranslator/blob/v2.00/images/logo_beta_cut.png" width="280">
 
+# RTranslator Enhanced
+
+This is **RTranslator Enhanced**, a fork of [niedev/RTranslator](https://github.com/niedev/RTranslator)
+adding:
+
+- **Solo Conversation mode** — Conversation mode's two-way translation on a single phone,
+  no second device needed; each language direction independently set to always-listening
+  or push-to-talk (see `docs/solo-conversation-mode-design.md` and
+  `docs/solo-conversation-mode-changelog.md`)
+- Optional higher-quality on-device neural text-to-speech voices, gated by device RAM, with
+  automatic punctuation restoration (see `docs/neural-tts-and-punctuation-research.md`)
+- A fix for the NLLB beam-search crash bug present in upstream (see
+  `docs/beam-search-crash-fix.md`)
+- Groundwork for Linux/Windows/macOS desktop support alongside Android (in progress)
+
+Everything below this point describes the original RTranslator project this fork is built
+on — still accurate for the features it documents. See the `docs/` directory for what this
+fork adds on top.
+
+---
+
 RTranslator is an (<a href='https://github.com/niedev/RTranslator?tab=readme-ov-file#libraries-and-models'>almost</a>) open-source, free, and offline real-time translation app for Android.
 
 Connect to someone who has the app, connect Bluetooth headphones, put the phone in your pocket and you can have a conversation as if the other person spoke your language.
