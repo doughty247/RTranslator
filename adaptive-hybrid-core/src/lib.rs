@@ -10,6 +10,7 @@ pub mod asr;
 pub mod config;
 pub mod error;
 pub mod ffi;
+pub mod langid;
 pub mod mt;
 pub mod pipeline;
 pub mod runtime_guard;

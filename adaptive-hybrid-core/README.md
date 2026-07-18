@@ -13,21 +13,35 @@ wrappers and has no other Java-side dependency.
 
 ## Status
 
-This is a **Phase 2 skeleton**, not a working translation pipeline yet. What's here:
+The Phase 3 design doc (`../docs/adaptive-hybrid-mode-design.md`) is **signed off** — all
+six open questions were decided by the developer and are implemented below. What's left is
+Phase 5's real ASR/MT inference, not a design question. What's here:
 
-- `config.rs` — per-direction (`FirstToSecond` / `SecondToFirst`) live-vs-push-to-talk
-  config, safely mutable at runtime.
-- `asr.rs` / `mt.rs` — ONNX Runtime session loading (via `ort`) for the Whisper and NLLB
-  model files, matching the file names and roles in the model artifact contract. The
-  actual decode loops are **not implemented** — that's Phase 4/5 work, gated on the Phase 3
-  design doc being reviewed and signed off by the developer (see repo root `CLAUDE.md`).
-- `vad.rs` / `pipeline.rs` — intentionally empty. The live-direction/push-to-talk state
-  machine and VAD gating are the project's core design contribution and are not something
-  this session should guess at ahead of that review.
-- `ffi.rs` — the UniFFI-exported surface: session start/stop, `push_audio_chunk`, config
-  get/set, and a `TranslationListener` callback. `push_audio_chunk` is currently a stub — it
-  proves data flows across the boundary in both directions (see `tests/`) but does not run
-  real inference.
+- `config.rs` — per-direction (`FirstToSecond` / `SecondToFirst`) mode config
+  (`Live`/`PushToTalk`/`Off`), safely mutable at runtime, plus source/target language
+  codes per direction.
+- `vad.rs` — real energy-based VAD with a three-phase echo-safety gate (Muted -> Elevated
+  -> Normal after TTS playback stops) — the developer's hybrid pick over the design doc's
+  Option A/B split. Deterministically unit-tested (audio-domain virtual clock, no real
+  sleeps needed).
+- `langid.rs` — Rust-native language disambiguation for the both-Live case, via `whatlang`
+  (no external model file). Unit-tested against real text.
+- `pipeline.rs` — `PipelineManager`: two independent per-direction loops (Live's VAD-gated
+  buffer, PushToTalk's button-bracketed buffer), the both-Live ambiguous-utterance path,
+  and `resolve_ambiguous` (langid -> ASR-confidence -> sticky-bias fallback chain). Unit
+  tested, including the both-Live "one ambiguous event, not two" behavior.
+- `asr.rs` / `mt.rs` — ONNX Runtime session **loading** (via `ort`) for the Whisper and
+  NLLB model files, matching the file names and roles in the model artifact contract. The
+  actual autoregressive decode loops are **not implemented** — this is the one remaining
+  piece of real work, and it's specifically blocked on the real `.onnx` weight files this
+  sandbox doesn't have (`../docs/model-artifact-contract.md` §1), not on any open design
+  question.
+- `ffi.rs` — the UniFFI-exported surface: session start/stop, undirected
+  `push_audio_chunk` (Rust fans it out internally — see the design doc §3), push-to-talk
+  bracketing, `notify_playback_window` (echo-safety), config get/set, and two callbacks
+  (`TranslationListener` for translated text, optional `DebugListener` for VAD/echo-window
+  field instrumentation). Fully wired to `pipeline.rs`; `resolve_utterance`'s placeholder
+  text is the only remaining stub, standing in for the real ASR/MT call.
 - `error.rs` — the shared error type crossing the boundary.
 
 ## Why no `.udl` file
@@ -81,6 +95,11 @@ This crate was built and tested inside a network-restricted sandbox with **no ph
 Android device and no access to the Whisper/NLLB `.onnx` weight files** (multi-hundred-MB
 downloads from a host the environment's network policy blocks). Concretely:
 
+- `src/vad.rs`, `src/langid.rs`, `src/pipeline.rs` unit tests — **actually run**, and
+  actually exercise real logic (VAD phase transitions, language disambiguation against
+  real sentences, sticky bias, the both-Live "one ambiguous event" fan-in). None of this
+  needs the ONNX weight files, so unlike `asr.rs`/`mt.rs` it isn't just structurally
+  written — it's verified.
 - `tests/tokenizer_roundtrip.rs` — **actually run**, against the real
   `../app/src/main/assets/sentencepiece_bpe.model` file. This is the one part of "confirm
   inference works standalone" (`CLAUDE.md` Phase 2) that was verifiable here.
@@ -88,20 +107,24 @@ downloads from a host the environment's network policy blocks). Concretely:
   the expected, specific error when the model directory doesn't exist. It does **not**
   verify successful loading or correct tensor I/O against the real weights — that needs the
   actual `.onnx` files.
-- `tests/ffi_roundtrip.rs` — exercises `HybridSession`'s lifecycle, config, and the
-  `TranslationListener` callback directly through the compiled `cdylib`'s UniFFI-generated
-  Python bindings (via `uniffi-bindgen generate --language python`), not through
-  Kotlin/Java — there was no Android SDK/NDK in this environment to run a JVM+Kotlin
-  smoke test. This exercises the same generated extern "C" scaffolding Kotlin bindings
-  would call through, so it's a meaningful proxy for "the boundary works," but it is not a
-  substitute for an actual Java-side round trip on-device.
+- `tests/ffi_roundtrip.py` (run via `tests/run_ffi_roundtrip.sh`) — exercises
+  `HybridSession`'s full wired-up surface — lifecycle, config, undirected
+  `push_audio_chunk` with VAD-gated (not per-chunk) translation callbacks, the
+  playback-window echo-safety signal, push-to-talk bracketing, the both-Live "no
+  premature guess" behavior, and the `DebugListener` callback — directly through the
+  compiled `cdylib`'s UniFFI-generated Python bindings, not through Kotlin/Java — there was
+  no Android SDK/NDK in this environment to run a JVM+Kotlin smoke test. This exercises the
+  same generated extern "C" scaffolding Kotlin bindings would call through, so it's a
+  meaningful proxy for "the boundary works," but it is not a substitute for an actual
+  Java-side round trip on-device.
 - Kotlin bindings generation (`uniffi-bindgen generate --language kotlin`) was run and its
   output committed under `bindings/kotlin/` for review, but has not been compiled or run
   from a real Android/Kotlin toolchain.
 
-**Before Phase 4 implementation locks in the tensor I/O in `asr.rs`/`mt.rs`, re-run against
-the real model files (sideloaded per `../Sideloading.md`) and confirm on the Pixel 9 Pro
-XL.**
+**Before wiring real ASR/MT into `asr.rs`/`mt.rs`'s decode loops, re-run against the real
+model files (sideloaded per `../Sideloading.md`) and confirm on the Pixel 9 Pro XL.** The
+pipeline/VAD/langid logic those decode loops plug into is already implemented and tested
+above — this is the one remaining gap, not a design gap.
 
 ## Licensing
 

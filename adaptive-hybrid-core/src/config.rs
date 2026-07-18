@@ -38,7 +38,8 @@ pub enum DirectionMode {
 #[derive(Debug, Clone)]
 struct DirectionConfig {
     mode: DirectionMode,
-    language_code: String,
+    source_language_code: String,
+    target_language_code: String,
 }
 
 /// Session-wide config, safe to share across the Java/Rust boundary as a
@@ -62,11 +63,13 @@ impl HybridConfig {
         Self {
             first_to_second: RwLock::new(DirectionConfig {
                 mode: first_to_second_mode,
-                language_code: second_language_code.clone(),
+                source_language_code: first_language_code.clone(),
+                target_language_code: second_language_code.clone(),
             }),
             second_to_first: RwLock::new(DirectionConfig {
                 mode: second_to_first_mode,
-                language_code: first_language_code,
+                source_language_code: second_language_code,
+                target_language_code: first_language_code,
             }),
         }
     }
@@ -79,9 +82,15 @@ impl HybridConfig {
         self.slot(direction).write().mode = mode;
     }
 
+    /// Language code this direction listens for (feeds ASR forced-decoding
+    /// and, for the both-Live case, `langid::disambiguate`'s candidate list).
+    pub fn source_language(&self, direction: Direction) -> String {
+        self.slot(direction).read().source_language_code.clone()
+    }
+
     /// Target language code this direction translates into.
     pub fn target_language(&self, direction: Direction) -> String {
-        self.slot(direction).read().language_code.clone()
+        self.slot(direction).read().target_language_code.clone()
     }
 }
 

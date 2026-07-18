@@ -1,12 +1,22 @@
-//! The UniFFI-exposed surface. This is the Phase 2 deliverable: a minimal,
-//! trivial round trip proving the Java<->Rust boundary works, before any real
-//! pipeline logic (Phase 3/4/5) is built on top of it.
+//! The UniFFI-exposed surface, now wired to the real §2/§4/§5/§6/§7
+//! architecture from `docs/adaptive-hybrid-mode-design.md` once the
+//! developer signed off on it. Kept intentionally minimal per `CLAUDE.md`
+//! ("a small, stable UniFFI interface is what makes this portable later"):
+//! session start/stop, push an undirected audio chunk (§3 — Rust does the
+//! fan-out internally per §2 Option A, Java never has to pre-label which
+//! direction a chunk belongs to), push-to-talk bracketing, config get/set,
+//! the playback-window echo-safety signal (§4), and two callbacks — one for
+//! translated text, one optional one for §7's field-instrumentation events.
 //!
-//! Deliberately small per `CLAUDE.md`'s "minimize the surface" guidance:
-//! session start/stop, push an audio chunk, config get/set, and a
-//! translated-text callback — nothing else crosses the boundary. Real ASR/MT
-//! is not wired in yet (`push_audio_chunk` below is a stub that proves data
-//! flows both ways, it does not run inference); that follows Phase 3 sign-off.
+//! What's still a stub: `resolve_utterance` below produces placeholder text
+//! instead of running real ASR/MT. `pipeline.rs`'s `PipelineManager` now
+//! correctly gates *when* an utterance boundary happens (VAD, push-to-talk
+//! bracketing, §5/§6 disambiguation for the both-Live case) — what's missing
+//! is only the actual `asr.rs`/`mt.rs` inference call on the captured PCM,
+//! which this sandbox cannot verify without the real Whisper/NLLB weight
+//! files (`docs/model-artifact-contract.md` §1). Wiring that in is Phase 5's
+//! remaining job; the shape of when/what it's called with is no longer a
+//! stub.
 
 use std::sync::Arc;
 
@@ -14,6 +24,8 @@ use parking_lot::Mutex;
 
 use crate::config::{Direction, DirectionMode, HybridConfig};
 use crate::error::HybridError;
+use crate::pipeline::{PipelineEvent, PipelineManager};
+use crate::vad::{GateEvent, VadConfig};
 
 /// Implemented on the Java/Kotlin side; Rust calls back into it when a
 /// direction has translated text ready.
@@ -22,22 +34,30 @@ pub trait TranslationListener: Send + Sync {
     fn on_translated_text(&self, direction: Direction, text: String);
 }
 
+/// §7: optional field-instrumentation hook. Off by default (no listener
+/// registered => zero overhead beyond the event already being computed by
+/// `pipeline.rs`, which happens regardless since `UtteranceStarted`/`Ended`
+/// drive the real pipeline too, not just debugging).
+#[uniffi::export(with_foreign)]
+pub trait DebugListener: Send + Sync {
+    fn on_debug_event(&self, direction: Direction, event: GateEvent, elapsed_ms: u64);
+}
+
 #[derive(Default)]
 struct SessionState {
     running: bool,
-    /// Count of audio chunks received since start(), for round-trip
-    /// verification only (see tests/ffi_roundtrip.rs) — not a real pipeline.
-    chunks_received: u64,
 }
 
-/// One Adaptive Hybrid Mode session. Owns the config and (once Phase 4/5 land)
-/// will own the live/push-to-talk pipelines; today it only proves the
-/// lifecycle and callback plumbing work.
+/// One Adaptive Hybrid Mode session: owns the config and the per-direction
+/// pipeline state (`PipelineManager` — §2's two independent loops, §4's echo
+/// gating, §5/§6's disambiguation).
 #[derive(uniffi::Object)]
 pub struct HybridSession {
     config: Arc<HybridConfig>,
     state: Mutex<SessionState>,
+    pipeline: Mutex<PipelineManager>,
     listener: Mutex<Option<Arc<dyn TranslationListener>>>,
+    debug_listener: Mutex<Option<Arc<dyn DebugListener>>>,
 }
 
 #[uniffi::export]
@@ -47,12 +67,21 @@ impl HybridSession {
         Self {
             config,
             state: Mutex::new(SessionState::default()),
+            pipeline: Mutex::new(PipelineManager::new(VadConfig::default())),
             listener: Mutex::new(None),
+            debug_listener: Mutex::new(None),
         }
     }
 
     pub fn set_listener(&self, listener: Arc<dyn TranslationListener>) {
         *self.listener.lock() = Some(listener);
+    }
+
+    /// §7. Registering this has no effect on the translated-text path — it
+    /// only adds visibility into VAD/echo-window transitions already
+    /// happening internally.
+    pub fn set_debug_listener(&self, listener: Arc<dyn DebugListener>) {
+        *self.debug_listener.lock() = Some(listener);
     }
 
     pub fn start(&self) -> Result<(), HybridError> {
@@ -61,7 +90,6 @@ impl HybridSession {
             return Err(HybridError::AlreadyRunning);
         }
         state.running = true;
-        state.chunks_received = 0;
         Ok(())
     }
 
@@ -74,37 +102,64 @@ impl HybridSession {
         Ok(())
     }
 
-    /// Push a raw PCM chunk (mono 16kHz per
-    /// `docs/model-artifact-contract.md` §2) for the given direction.
+    /// Push one raw PCM chunk (mono 16kHz `f32`, `[-1.0, 1.0]`, per
+    /// `docs/model-artifact-contract.md` §2) — undirected; `PipelineManager`
+    /// fans it out internally to whichever Live/PushToTalk loops are armed
+    /// (§2 Option A, §3).
     ///
-    /// Stub for now: does not run VAD/ASR/MT (Phase 4/5). It records receipt
-    /// and, if a listener is registered, echoes a placeholder string back
-    /// through the callback so the full Java -> Rust -> Java path can be
-    /// exercised end to end before real inference exists.
-    pub fn push_audio_chunk(&self, direction: Direction, pcm: Vec<f32>) -> Result<(), HybridError> {
-        {
-            let mut state = self.state.lock();
-            if !state.running {
-                return Err(HybridError::NotRunning);
-            }
-            state.chunks_received += 1;
+    /// `chunk_duration_ms` is the wall-clock duration of `pcm` as captured
+    /// by Java's `AudioRecord` — used to advance the VAD gate's internal
+    /// audio-domain clock (`vad.rs`'s module docs explain why that's
+    /// deliberately not wall-clock `Instant`).
+    pub fn push_audio_chunk(
+        &self,
+        pcm: Vec<f32>,
+        chunk_duration_ms: u32,
+    ) -> Result<(), HybridError> {
+        if !self.state.lock().running {
+            return Err(HybridError::NotRunning);
         }
 
-        if self.config.mode(direction) == DirectionMode::Off {
-            // Counted above (so callers can still see chunks arriving) but
-            // never reaches the listener — an Off direction produces no
-            // output by definition. Real ASR/MT will short-circuit earlier
-            // than this once Phase 4 lands; this stub mirrors that contract
-            // now so callers can rely on it before the real pipeline exists.
-            return Ok(());
-        }
+        let events = self
+            .pipeline
+            .lock()
+            .process_chunk(&self.config, &pcm, chunk_duration_ms);
 
-        if let Some(listener) = self.listener.lock().as_ref() {
-            let target = self.config.target_language(direction);
-            listener.on_translated_text(
-                direction,
-                format!("[stub: {} samples queued for -> {target}]", pcm.len()),
-            );
+        for event in events {
+            self.handle_pipeline_event(event);
+        }
+        Ok(())
+    }
+
+    /// §4's playback-window signal. Java calls this around every
+    /// `TextToSpeech` start/done callback for a Live direction.
+    pub fn notify_playback_window(&self, direction: Direction, active: bool) {
+        let event = self
+            .pipeline
+            .lock()
+            .notify_playback_window(direction, active);
+        self.handle_pipeline_event(event);
+    }
+
+    /// §2/§3: brackets push-to-talk audio for `direction`. Java calls this
+    /// on button-down; subsequent `push_audio_chunk` calls accumulate into
+    /// that direction's buffer until `end_push_to_talk`.
+    pub fn begin_push_to_talk(&self, direction: Direction) -> Result<(), HybridError> {
+        if !self.state.lock().running {
+            return Err(HybridError::NotRunning);
+        }
+        self.pipeline.lock().begin_push_to_talk(direction);
+        Ok(())
+    }
+
+    /// Java calls this on button-up. Emits translated text (once Phase 5
+    /// wires in real ASR/MT) if any audio was captured while armed.
+    pub fn end_push_to_talk(&self, direction: Direction) -> Result<(), HybridError> {
+        if !self.state.lock().running {
+            return Err(HybridError::NotRunning);
+        }
+        if let Some(event) = self.pipeline.lock().end_push_to_talk(direction) {
+            self.handle_pipeline_event(event);
         }
         Ok(())
     }
@@ -120,11 +175,55 @@ impl HybridSession {
     pub fn is_running(&self) -> bool {
         self.state.lock().running
     }
+}
 
-    /// Chunks received since the last `start()` — exposed only so the round
-    /// trip test / Java smoke test can assert data actually crossed the
-    /// boundary, not a real API surface.
-    pub fn chunks_received(&self) -> u64 {
-        self.state.lock().chunks_received
+impl HybridSession {
+    fn handle_pipeline_event(&self, event: PipelineEvent) {
+        match event {
+            PipelineEvent::UtteranceReady { direction, pcm } => {
+                self.emit_translation(direction, self.resolve_utterance(direction, &pcm));
+            }
+            PipelineEvent::PushToTalkReady { direction, pcm } => {
+                self.emit_translation(direction, self.resolve_utterance(direction, &pcm));
+            }
+            PipelineEvent::AmbiguousUtteranceReady { pcm } => {
+                // §5/§6's disambiguation (pipeline.rs's resolve_ambiguous)
+                // needs forced-decoded ASR text in both candidate languages
+                // before it can run — that's real inference this sandbox
+                // can't perform (docs/model-artifact-contract.md §1). Phase
+                // 5 must forced-decode `pcm` in both directions' source
+                // languages and call `PipelineManager::resolve_ambiguous`
+                // with the results before emitting a translation here.
+                // Deliberately not forwarded to either callback: it isn't a
+                // VAD/playback event §7's listener expects, and emitting a
+                // guessed direction to §3's listener would defeat the point
+                // of disambiguating in the first place.
+                let _ = pcm;
+            }
+            PipelineEvent::Debug {
+                direction,
+                event,
+                elapsed_ms,
+            } => {
+                if let Some(listener) = self.debug_listener.lock().as_ref() {
+                    listener.on_debug_event(direction, event, elapsed_ms);
+                }
+            }
+        }
+    }
+
+    /// Placeholder for the real ASR -> MT call Phase 5 wires in
+    /// (`asr.rs`/`mt.rs`'s model-loading is already in place; the decode
+    /// loops themselves are the remaining, currently-unverifiable-here
+    /// piece — see `docs/model-artifact-contract.md` §1-2).
+    fn resolve_utterance(&self, direction: Direction, pcm: &[f32]) -> String {
+        let target = self.config.target_language(direction);
+        format!("[stub: {} samples captured for -> {target}]", pcm.len())
+    }
+
+    fn emit_translation(&self, direction: Direction, text: String) {
+        if let Some(listener) = self.listener.lock().as_ref() {
+            listener.on_translated_text(direction, text);
+        }
     }
 }

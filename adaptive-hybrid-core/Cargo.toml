@@ -15,6 +15,7 @@ ndarray = { version = "0.17", features = ["std"] }
 sentencepiece = "0.11"
 thiserror = "1.0"
 parking_lot = "0.12"
+whatlang = "0.18.0"
 
 [dev-dependencies]
 hound = "3.5"

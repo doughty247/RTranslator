@@ -1,13 +1,13 @@
-# Adaptive Hybrid Mode — Design Doc (Phase 3, draft for developer sign-off)
+# Adaptive Hybrid Mode — Design Doc (Phase 3, SIGNED OFF)
 
-**Status: DRAFT. Do not begin Phase 4/5 implementation of the sections below marked
-"decision needed" until the developer has picked an option.** Per `CLAUDE.md`, this is
-the developer's own design contribution — this doc lays out options and tradeoffs, it
-does not unilaterally pick an architecture. `adaptive-hybrid-core/src/config.rs` and
-`ffi.rs` already implement §1, §1a, and part of §3 below as working Phase 2 code, since
-those were low-risk enough to prototype directly; §2 (state machine), §4 (echo-safety
-signal), §6 (sticky language bias), and §7 (debug instrumentation) are genuinely open and
-this doc proposes rather than implements them.
+**Status: DECIDED. All six open questions below were resolved by the developer and are
+now implemented** in `config.rs`, `vad.rs`, `langid.rs`, `pipeline.rs`, and `ffi.rs`. Each
+section below is left in its original options-and-tradeoffs form (that record has value —
+it's why each choice was made) with the actual decision called out at the top of the
+section. See each module's own doc comments for how the decision maps to code, and
+`adaptive-hybrid-core/README.md`'s status section for what's implemented vs. still stubbed
+(real ASR/MT inference — blocked on real model weights this sandbox doesn't have, not on
+any remaining design question).
 
 ## 1. Per-direction configuration model
 
@@ -51,7 +51,12 @@ confirm audio is arriving, but nothing is ever emitted) — see `ffi.rs` and
 `Off` the same way: skip the direction before doing any work, not just suppress its output
 after running inference anyway.
 
-## 2. State machine — DECISION NEEDED
+## 2. State machine — DECIDED: Option A
+
+Implemented in `pipeline.rs`'s `PipelineManager` — two independent `DirectionRuntime`s
+(each with its own `VadGate`), `HybridSession::push_audio_chunk` fans audio out to
+whichever loops are armed. See that module's doc comments for the both-Live disambiguation
+flow (`AmbiguousUtteranceReady` -> Phase 5's forced-decode ASR -> `resolve_ambiguous`).
 
 The hard part: a live direction is a continuous loop (VAD trigger → ASR → MT → emit →
 keep listening), a push-to-talk direction is a discrete one (button down → capture →
@@ -142,17 +147,16 @@ Implemented in `ffi.rs` as a first pass; kept intentionally minimal per `CLAUDE.
 | `HybridSession::push_audio_chunk(direction, pcm)` | Java → Rust | raw PCM in; **§2 decision changes this signature** — if Option A ships, this likely stays direction-agnostic (Rust does the fan-out internally) rather than Java pre-labeling which direction a chunk belongs to, since Java can't know that for the both-Live case any better than Rust can |
 | `TranslationListener::on_translated_text(direction, text)` | Rust → Java | the callback; Java routes to headphone or speaker TTS based on that direction's mode |
 
-**Open question this doc flags rather than resolves:** should `begin_push_to_talk` /
-`end_push_to_talk` (needed by §2 Option A) take a `Direction`, or should Java pass audio
-for a push-to-talk direction through a *separate* method entirely rather than sharing
-`push_audio_chunk`? Leaning toward sharing the method (one audio ingestion path is
-simpler for Java to call correctly) with separate `begin_push_to_talk`/`end_push_to_talk`
-signals bracketing it, but this should be confirmed once §2 is settled, not assumed now.
+**Decided: shared method.** `push_audio_chunk(pcm, chunk_duration_ms)` — note the signature
+also **dropped the `direction` parameter entirely**, not just merged PTT into it. This
+follows directly from choosing §2 Option A: since Rust decides internally which loop(s) a
+chunk belongs to, Java has no direction to usefully supply for the both-Live case anyway
+(it's genuinely undirected mic audio), so requiring one for the unambiguous cases too would
+just be a parameter Java can't always answer honestly. `begin_push_to_talk(direction)` /
+`end_push_to_talk(direction)` bracket which direction's buffer accumulates the same
+`push_audio_chunk` calls while a PTT button is held. See `ffi.rs`.
 
-**Also open:** what crosses for §4's echo-safety signal — see below, that's this doc's
-main remaining undecided piece along with §2.
-
-## 4. Echo-safety coordination signal — DECISION NEEDED
+## 4. Echo-safety coordination signal — DECIDED: hybrid, biased toward Option A
 
 Full analysis in `../docs/echo-safety-analysis.md`; summary of what that analysis
 concluded Rust needs from Java: a **playback-window signal**, because
@@ -189,10 +193,33 @@ Not implementable responsibly without that data; listed here so the interface (�
 leave room for it (e.g. a threshold-adjustment parameter, not just a boolean) without
 committing to building it in Phase 4.
 
-### Signal shape (applies to either option)
+### What actually shipped: a graduated hybrid, not a straight pick of A or B
 
-Proposed UniFFI addition to `ffi.rs` (not yet implemented, pending this section's
-sign-off):
+The developer's call: lean on Option A's safety but don't settle for its abruptness —
+"pick the best of both... gaming for the best and most robust solution to live environment
+situations." Implemented in `vad.rs` as three phases following every `notify_playback_window`
+stop signal:
+
+1. **Muted** (`muted_tail_ms`, default 300ms) — Option A's hard gate, covering the
+   loudest-echo window right as playback ends. VAD fully blind.
+2. **Elevated** (`elevated_tail_ms`, default 700ms) — Option B's sensitivity idea, but only
+   as the second phase, not from the start: threshold raised by `elevated_multiplier`
+   (default 2.5x) rather than gated entirely, so quiet residual echo stays filtered while
+   genuinely loud speech can still get through.
+3. **Normal** — full sensitivity.
+
+This is why the risk called out in Option B's tradeoff ("not implementable responsibly
+without on-device echo data") is contained rather than eliminated: the Elevated phase's
+specific multiplier and duration are still starting points needing the developer's actual
+Bluetooth headphones to tune (§7's debug callback exists specifically to make that tuning
+measurable), but because Elevated only ever follows a Muted phase — never runs from the
+moment playback stops — a wrong guess there degrades to "resumes a bit slower than ideal,"
+not "missed the echo entirely." See `vad.rs`'s module docs for the full phase logic and
+`VadConfig` for the tunable constants.
+
+### Signal shape
+
+Implemented in `ffi.rs`:
 
 ```rust
 fn notify_playback_window(&self, direction: Direction, active: bool);
@@ -203,10 +230,20 @@ Java calls this around every `TextToSpeech` start/done callback for a Live direc
 output by construction, same as WalkieTalkie today). Kept as a single boolean rather than
 a duration/timestamp so Rust doesn't need to trust Java's clock or guess a trailing-buffer
 length — Java, which owns the actual `TextToSpeech.onDone()` callback, decides exactly
-when to flip it back off (including whatever trailing buffer it wants), rather than Rust
-guessing a fixed offset the way `VoiceTranslationService`'s hardcoded 500ms does today.
+when to flip it back off, rather than Rust guessing a fixed offset the way
+`VoiceTranslationService`'s hardcoded 500ms does today. The Muted/Elevated tail durations
+from that point forward are `vad.rs`'s `VadConfig`, not Java's concern.
 
-## 5. MLKit vs. open-source language ID — DECISION NEEDED
+## 5. MLKit vs. open-source language ID — DECIDED: Option B (Rust-native)
+
+The developer chose the fully self-contained path over the ship-faster MLKit shortcut this
+doc recommended — prioritizing the standalone-extraction goal over minimizing scope.
+Implemented in `langid.rs` using `whatlang` (pure Rust, no external model file, unlike a
+fastText/lid.176-style `ort` model — see that module's docs for why this sidesteps Option
+B's originally-listed cost of "adds a new model dependency"). `Detector::with_allowlist`
+restricted to the session's two configured languages is the direct analog of MLKit's
+forced-candidate confidence check. Fully unit-tested in this sandbox (no model weights
+needed), unlike `asr.rs`/`mt.rs`.
 
 Needed by §2's both-Live-simultaneously disambiguation case (the only case that still
 needs it, per §2's analysis — narrower than WalkieTalkie's requirement, which needed it
@@ -241,7 +278,14 @@ per-direction pipeline; language ID doesn't need to be a fourth), revisit Option
 if/when the crate is actually being extracted standalone and MLKit's Java dependency
 becomes a real blocker rather than a hypothetical one.
 
-## 6. Sticky language bias for both-Live disambiguation — DECISION NEEDED
+## 6. Sticky language bias for both-Live disambiguation — DECIDED: include it (Option A)
+
+Implemented in `pipeline.rs`'s `ConversationState` + `PipelineManager::resolve_ambiguous`,
+scoped exactly as recommended: `langid::disambiguate` first, ASR-confidence comparison
+second (`CONFIDENCE_TIE_EPSILON` gates what counts as a genuine tie), the sticky bias only
+as the final tiebreak — never overriding a confident signal from either earlier step. Unit
+tested (`pipeline::tests::resolve_ambiguous_*`) against synthetic text/confidence inputs,
+since real ASR confidence distributions aren't available in this sandbox.
 
 **The vision:** §2 narrowed language disambiguation down to one case — both directions
 Live simultaneously — but within that case, the plan so far (§2 + §5) is a direct port of
@@ -284,7 +328,16 @@ whichever §2 option ships (it lives inside the disambiguation step, doesn't cha
 UniFFI surface), so it doesn't need to block Phase 4 the way §2/§4/§5 do; flagging it here
 so it's a deliberate inclusion or a deliberate deferral, not an oversight.
 
-## 7. VAD/echo-window field instrumentation — DECISION NEEDED
+## 7. VAD/echo-window field instrumentation — DECIDED: build it now (Option A)
+
+The developer chose to build this immediately rather than waiting for the first on-device
+echo test, ahead of this doc's own timing suggestion. Implemented as `ffi.rs`'s
+`DebugListener` trait (`on_debug_event(direction, event, elapsed_ms)`) and
+`HybridSession::set_debug_listener` — optional, off by default, zero effect on the
+translated-text path. `GateEvent` (`vad.rs`) carries `UtteranceStarted`/`UtteranceEnded`/
+`SuppressedByPlayback`/`PlaybackWindowStarted`/`PlaybackWindowEnded`, each timestamped
+against the gate's own audio-domain clock. Exercised end-to-end in
+`tests/ffi_roundtrip.py`.
 
 **The vision:** `CLAUDE.md` and `docs/echo-safety-analysis.md` both name Bluetooth
 feedback as the single highest-risk unknown in the whole project, resolvable only by
@@ -324,20 +377,25 @@ cheap enough to add right before the first on-device echo test, and building it 
 anyway. Worth deciding now only so it's on the Phase 4 checklist rather than improvised
 mid-testing when something already sounds wrong.
 
-## Summary: what needs the developer's answer before Phase 4 starts
+## Summary: decisions and where they landed
 
-1. §2 — Option A (two independent loops) vs. Option B (single shared loop)? (recommend A)
-2. §4 — Option A (hard mute window) vs. Option B (sensitivity adjustment)? (recommend A
-   as a first cut, given B needs on-device data this session can't gather)
-3. §5 — Option A (reuse MLKit via Java) vs. Option B (Rust-native)? (recommend A)
-4. §3's open question — should push-to-talk audio share `push_audio_chunk` with Live
-   audio, or use a separate ingestion method? (leaning toward sharing, not yet confirmed)
-5. §6 — include the sticky-language-bias tiebreak, or keep every utterance judged
-   independently like WalkieTalkie does? (recommend including it, scoped narrowly as a
-   tiebreak only — small enough to fold into §2's implementation either way)
-6. §7 — build the optional VAD/echo-window debug callback before Phase 4's on-device
-   testing begins, or skip it and rely on the developer's ear? (recommend building it,
-   timed for right before the first echo test rather than now)
+1. §2 — **Option A**, two independent per-direction loops. `pipeline.rs`.
+2. §4 — **hybrid**: Muted phase (Option A) followed by an Elevated phase (Option B's
+   sensitivity idea), not a straight pick of either. `vad.rs`.
+3. §5 — **Option B**, Rust-native (`whatlang`), not MLKit — developer prioritized the
+   standalone-extraction goal over this doc's ship-faster recommendation. `langid.rs`.
+4. §3's open question — **shared method**, and the `direction` parameter was dropped from
+   `push_audio_chunk` entirely as a direct consequence of §2 Option A. `ffi.rs`.
+5. §6 — **included**, scoped narrowly as a tiebreak only, exactly as recommended.
+   `pipeline.rs`'s `ConversationState`.
+6. §7 — **included**, built now rather than deferred to right before on-device testing.
+   `ffi.rs`'s `DebugListener`.
 
-Everything else in this doc (§1/§1a, and the parts of §3 already implemented) is either
-already built in Phase 2 code or narrow enough not to need a separate sign-off round.
+What's left is not a design question: `asr.rs`/`mt.rs`'s actual Whisper/NLLB decode loops
+(model loading is implemented; the autoregressive decode itself is not, since it can't be
+verified against real weights in this sandbox — see
+`docs/model-artifact-contract.md` §1) and wiring `pipeline.rs`'s
+`UtteranceReady`/`AmbiguousUtteranceReady`/`PushToTalkReady` events into that real
+inference instead of `ffi.rs`'s current placeholder-text stub. That's Phase 5's remaining
+job, and it's an implementation task now, not something needing another round of
+sign-off.
