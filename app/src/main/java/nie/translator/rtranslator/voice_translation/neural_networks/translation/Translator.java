@@ -986,9 +986,15 @@ public class Translator extends NeuralNetworkApi {
                 android.util.Log.i("performance", "execution of"+j+"th word done in: " + (System.currentTimeMillis()-time) + "ms");
                 time = System.currentTimeMillis();
 
-                if(oldResult != null) {
-                    oldResult.close(); //serves to release the memory occupied by the result (otherwise it accumulates and increases a lot)
-                }
+                // BUG FIX (see docs/beam-search-crash-fix.md): oldResult used to be closed
+                // right here, immediately after decoderSession.run(). But cacheContainer
+                // (built from oldResult a few lines below, in a *previous* iteration) holds
+                // zero-copy native pointers directly into oldResult's underlying tensor
+                // memory -- closing oldResult here, before that cacheContainer has been
+                // rotated out and closed later in *this* iteration, leaves it holding
+                // dangling pointers for part of the iteration. Deferred to after the
+                // cacheContainer rotation below (search for "oldResult.close();" further
+                // down) so the container referencing this memory is always closed first.
                 if(embedResult != null) {
                     embedResult.close();
                 }
@@ -1130,6 +1136,14 @@ public class Translator extends NeuralNetworkApi {
                     cacheContainer.reorder(indexes);
                     android.util.Log.i("performance", "cache reorder done in: " + (System.currentTimeMillis()-timeCache) + "ms");
                 }
+                // See the comment where oldResult was previously closed, right after
+                // decoderSession.run() above -- deferred to here so that oldCache.close()
+                // (a few lines up, only reached when j>1) always runs first. For j==1,
+                // oldResult is still null here (this is the first iteration), so this is a
+                // no-op exactly like it was before.
+                if(oldResult != null) {
+                    oldResult.close(); //serves to release the memory occupied by the result (otherwise it accumulates and increases a lot)
+                }
                 android.util.Log.i("performance", "post-execution of" + j + "th word done in: " + (System.currentTimeMillis() - time) + "ms");
                 android.util.Log.i("performance", "Generation of" + j + "th word done in: " + (System.currentTimeMillis() - initialTime) + "ms");
                 // we return the partial result with the highest probability
@@ -1167,7 +1181,13 @@ public class Translator extends NeuralNetworkApi {
             initResultBatched.close();
 
         } catch (OrtException | InvocationTargetException | NoSuchMethodException |
-                 IllegalAccessException | InstantiationException e) {
+                 IllegalAccessException | InstantiationException | IllegalStateException e) {
+            // IllegalStateException added alongside the beam-search crash fix (see
+            // docs/beam-search-crash-fix.md) -- CacheContainerNative.cpp now throws it
+            // (via JNI) instead of silently corrupting native memory on a real KV-cache
+            // shape mismatch. Without this, that exception would propagate uncaught past
+            // this method instead of surfacing through the same onFailure/notifyError
+            // path every other error here uses.
             e.printStackTrace();
             if(responseListener != null) {
                 mainHandler.post(() -> responseListener.onFailure(new int[]{ErrorCodes.ERROR_EXECUTING_MODEL}, 0));
